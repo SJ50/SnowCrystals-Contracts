@@ -12,16 +12,11 @@ from brownie import (
     Contract,
     web3,
     Snow,
-    Wlrs,
     SBond,
-    WBond,
     Glcr,
-    WShare,
     Boardroom,
-    BoardroomCopy,
     Oracle,
     Treasury,
-    TreasuryCopy,
     ShareTokenRewardPool,
     MainTokenNode,
     ShareTokenNode,
@@ -634,14 +629,14 @@ def get_all_info():
 
 
 def main():
-    # deploy_maintoken()
-    # deploy_bondtoken()
-    # deploy_sharetoken()
-    # deploy_main_token_lp()
-    # deploy_share_token_lp()
-    # deploy_boardroom()
-    # deploy_treasury_contract()
-    # deploy_main_token_oracle_contract()
+    deploy_maintoken()
+    deploy_bondtoken()
+    deploy_sharetoken()
+    deploy_main_token_lp()
+    deploy_share_token_lp()
+    deploy_boardroom()
+    deploy_treasury_contract()
+    deploy_main_token_oracle_contract()
     deploy_share_token_reward_pool()
     deploy_main_token_node()
     deploy_share_token_node()
