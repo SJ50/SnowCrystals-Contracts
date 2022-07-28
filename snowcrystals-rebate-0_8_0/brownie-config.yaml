@@ -1,0 +1,65 @@
+dependencies:
+  # - <organization/repo>@<version>
+  - smartcontractkit/chainlink-brownie-contracts@1.1.1
+  - OpenZeppelin/openzeppelin-contracts@4.7.1
+
+
+compiler:
+  solc:
+    remappings:
+      - '@chainlink=smartcontractkit/chainlink-brownie-contracts@1.1.1'
+      - '@openzeppelin=OpenZeppelin/openzeppelin-contracts@4.7.1'
+
+dotenv: .env
+
+networks:
+  default: "ganache-cli"
+  kovan:
+    weth_token: "0xd0A1E359811322d97991E03f863a0C30C2cF029C"
+    fau_token: "0xFab46E002BbF0b4509813474841E0716E6730136"
+    lending_pool_addresses_provider: "0x88757f2f99175387aB4C6a4b3067c77A695b0349"
+    dai_usd_price_feed: "0x777A68032a88E5A84678A77Af2CD65A7b3c0775a"
+    eth_usd_price_feed: "0x9326BFA02ADD2366b30bacB125260Af641031331"
+    varify: True
+  rinkeby:
+    weth_token: ""
+    varify: True
+  mainnet-fork:
+    weth_token: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+    lending_pool_addresses_provider: "0xB53C1a33016B2DC2fF3653530bfF1848a515c8c5"
+    dai_eth_price_feed: "0x773616E4d11A78F511299002da57A0a94577F1f4" 
+    dai_token: "0x6B175474E89094C44Da98b954EedeAC495271d0F"   
+    varify: False
+  bsc-test:
+    weth_token: ""
+    varify: True
+  bsc-main-fork:
+    weth_token: ""
+    varify: False
+  cronos-main-fork:
+    wcro_token: "0x5C7F8A570d578ED84E63fdFA7b1eE72dEae1AE23"
+    weth_token: "0xe44Fd7fCb2b1581822D0c862B68222998a0c299a"
+    usdc_token: "0xc21223249CA28397B4B6541dfFaEcC539BfF0c59"
+    usdt_token: "0x66e428c3f67a68878562e79A0234c1F83c208770"
+    deer_token: "0x6D6D6ba0c7e7DBaFffeC82b1ddF92e271650a63A"
+    tdeer_token: "0x78c59f3C8D7929e4c65BC424c9824cd4001f2d2A"
+    xdshare_token: "0x6F715158d4B1468528DA002F5941c72fe4159520"
+    lending_pool_addresses_provider: ""
+    varify: False
+  cronos-test:
+    weth_token: ""
+    varify: False
+  development:
+    weth_token: ""
+    varify: False
+  ganache-local:
+    weth_token: ""
+    varify: False
+  ganache-cli:
+    varify: False
+    gas_fee: 10000000000000000
+
+
+wallets:
+  ganache-gui: ${GANACHE_GUI_PRIVATE_KEY}
+
