@@ -6,9 +6,9 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/math/SafeMath8.sol";
 import "@openzeppelin/contracts/math/Math.sol";
 
+import "./lib/SafeMath8.sol";
 import "./access/Operator.sol";
 import "../interfaces/IOracle.sol";
 import "../interfaces/ILiquidityFund.sol";
@@ -54,19 +54,19 @@ contract Snow is ERC20, ERC20Burnable, Operator {
     ];
 
     uint256[] public burnTiersRates = [
-        1500,
-        1500,
-        1500,
-        1500,
-        1500,
-        1500,
-        1500,
-        1500,
-        600,
-        600,
-        600,
-        300,
-        300,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
         100
     ];
     address public taxFund; // fund buy back Token
@@ -150,7 +150,7 @@ contract Snow is ERC20, ERC20Burnable, Operator {
         addLiquidityEnabled = !addLiquidityEnabled;
     }
 
-    function getTaxTiersTwapsCount() public view returns (uint256 count) {
+    function getBurnTiersTwapsCount() public view returns (uint256 count) {
         return burnTiersTwaps.length;
     }
 
@@ -185,7 +185,7 @@ contract Snow is ERC20, ERC20Burnable, Operator {
 
     function setBurnTiersRate(uint8 _index, uint256 _value)
         public
-        onlyTaxOffice
+        onlyOwner
         returns (bool)
     {
         require(_index >= 0, "Index has to be higher than 0");
@@ -360,7 +360,7 @@ contract Snow is ERC20, ERC20Burnable, Operator {
                 emit TaxAdded(sender, _taxFund, _taxAmount);
             }
 
-            uint256 _burnRate = getBurnRate(_tokenPrice);
+            uint256 _burnRate = _getBurnRate(_tokenPrice);
             if (_burnRate > 0) {
                 uint256 _burnAmount = amount.mul(_burnRate).div(10000);
                 _burn(sender, _burnAmount);
@@ -373,7 +373,7 @@ contract Snow is ERC20, ERC20Burnable, Operator {
         _updateDollarPrice();
     }
 
-    function getBurnRate(uint256 _tokenPrice) public view returns (uint256) {
+    function _getBurnRate(uint256 _tokenPrice) internal returns (uint256) {
         for (
             uint8 tierId = uint8(getBurnTiersTwapsCount()).sub(1);
             tierId >= 0;
@@ -381,11 +381,11 @@ contract Snow is ERC20, ERC20Burnable, Operator {
         ) {
             if (_tokenPrice >= burnTiersTwaps[tierId]) {
                 require(
-                    taxTiersRates[tierId] <= 1500,
+                    burnTiersRates[tierId] <= 1500,
                     "allowed maximum burn rate 15%"
                 );
-                burnRate = taxTiersRates[tierId];
-                return taxTiersRates[tierId];
+                burnRate = burnTiersRates[tierId];
+                return burnTiersRates[tierId];
             }
         }
     }

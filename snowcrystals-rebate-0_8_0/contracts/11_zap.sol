@@ -1690,7 +1690,7 @@ contract Zap is Ownable, IZap {
 
     function _approveTokenIfNeeded(address token, address router) private {
         if (IERC20(token).allowance(address(this), router) == 0) {
-            IERC20(token).safeIncreaseAllowance(router, type(uint256).max);
+            IERC20(token).safeApprove(router, type(uint256).max);
         }
     }
 
