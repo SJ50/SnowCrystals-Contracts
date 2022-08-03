@@ -69,6 +69,7 @@ contract Snow is ERC20, ERC20Burnable, Operator {
         100,
         100
     ];
+
     address public taxFund; // fund buy back Token
 
     uint256 private _totalBurned;

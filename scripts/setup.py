@@ -112,12 +112,18 @@ def setup_main_token():
         {"from": deployer_account},
     )
     set_oracle_tx.wait(1)
-
+    print("Maintoken exclude maintokenLP from tax to make buying token tax free...")
+    set_lp_exclude_from_free_tx = main_token_contract.setExcludeFromFee(
+        main_token_lp,
+        True,
+        {"from": deployer_account},
+    )
+    set_lp_exclude_from_free_tx.wait(1)
     for X in range(8):
         print(f"Maintoken set burntier rates for index {X}")
         set_burn_tier_twap = main_token_contract.setBurnTiersRate(
             X,
-            1500,
+            1200,
             {"from": deployer_account},
         )
         set_burn_tier_twap.wait(1)
@@ -133,10 +139,41 @@ def setup_main_token():
         print(f"Maintoken set burntier rates for index {X}")
         set_burn_tier_twap = main_token_contract.setBurnTiersRate(
             X,
-            100,
+            400,
             {"from": deployer_account},
         )
         set_burn_tier_twap.wait(1)
+    print("Maintoken set tax rate...")
+    set_tax_rate_tx = main_token_contract.setTaxRate(
+        400,
+        {"from": deployer_account},
+    )
+    set_tax_rate_tx.wait(1)
+
+    # for X in range(8):
+    #     print(f"Maintoken set burntier rates for index {X}")
+    #     set_tax_tier_rate = main_token_contract.setTaxTiersRate(
+    #         X,
+    #         400,
+    #         {"from": deployer_account},
+    #     )
+    #     set_tax_tier_rate.wait(1)
+    # for X in range(8, 10):
+    #     print(f"Maintoken set burntier rates for index {X}")
+    #     set_tax_tier_rate = main_token_contract.setTaxTiersRate(
+    #         X,
+    #         400,
+    #         {"from": deployer_account},
+    #     )
+    #     set_tax_tier_rate.wait(1)
+    # for X in range(10, 14):
+    #     print(f"Maintoken set burntier rates for index {X}")
+    #     set_tax_tier_rate = main_token_contract.setTaxTiersRate(
+    #         X,
+    #         100,
+    #         {"from": deployer_account},
+    #     )
+    #     set_tax_tier_rate.wait(1)
 
 
 def setup_bond_token():

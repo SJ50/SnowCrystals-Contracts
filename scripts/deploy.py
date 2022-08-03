@@ -229,9 +229,9 @@ def deploy_main_token_lp():
     tokenA = os.environ.get("PEG_TOKEN")
     tokenB = os.environ.get("MAIN_TOKEN")
     amountADesired = 1 * 10**6
-    amountBDesired = 1 * 10**18 / 5
+    amountBDesired = 1 * 10**18
     amountAMin = 1 * 10**6
-    amountBMin = 1 * 10**18 / 5
+    amountBMin = 1 * 10**18
     create_liquidity_pool(
         tokenA=tokenA,
         tokenB=tokenB,
@@ -250,9 +250,9 @@ def deploy_share_token_lp():
     tokenA = os.environ.get("PEG_TOKEN")
     tokenB = os.environ.get("SHARE_TOKEN")
     amountADesired = 1 * 10**6
-    amountBDesired = 1 * 10**18 / 1000
+    amountBDesired = 1 * 10**18 / 100
     amountAMin = 1 * 10**18
-    amountBMin = 1 * 10**18 / 1000
+    amountBMin = 1 * 10**18 / 100
     create_liquidity_pool(
         tokenA=tokenA,
         tokenB=tokenB,
@@ -503,9 +503,9 @@ def main():
     deploy_maintoken()
     deploy_bondtoken()
     deploy_sharetoken()
-    get_peg_token()
-    deploy_main_token_lp()
-    deploy_share_token_lp()
+    # get_peg_token()
+    # deploy_main_token_lp()
+    # deploy_share_token_lp()
     deploy_boardroom()
     deploy_treasury_contract()
     deploy_main_token_oracle_contract()

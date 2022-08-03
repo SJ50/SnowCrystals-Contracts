@@ -125,6 +125,8 @@ def deploy_mocks(decimals=DECIMALS, initial_value=INITIAL_VALUE):
     # print(f"Deployed to {mock_price_feed.address}")
     print("Deploying Mock USDC...")
     usdc_token = MockUsdc.deploy({"from": account})
+    # set_decimals_tx = Contract(usdc_token.address).decimals({"from": account})
+    # set_decimals_tx.wait(1)
     print(f"Mock USDC Deployed to {usdc_token.address}")
 
     # print("Deploying Mock WETH...")
