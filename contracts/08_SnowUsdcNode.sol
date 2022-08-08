@@ -5,6 +5,8 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
+import "../interfaces/IBonusRewards.sol";
+
 pragma experimental ABIEncoderV2;
 pragma solidity 0.6.12;
 
@@ -48,7 +50,13 @@ contract MainTokenNode {
     bool public enabled;
     uint256 public constant MULTIPLIER = 10e18;
 
-    constructor(uint256 _startTime, address _token) public {
+    address public bonusreward;
+
+    constructor(
+        uint256 _startTime,
+        address _token,
+        address _bonusrewards
+    ) public {
         maxReturnPercent = 500;
         dripRate = 2100000;
         treasuryFeePercent = 25;
@@ -60,6 +68,7 @@ contract MainTokenNode {
         enabled = true;
         TOKEN = IERC20(_token);
         dev = msg.sender;
+        bonusreward = _bonusrewards;
     }
 
     receive() external payable {
@@ -224,6 +233,8 @@ contract MainTokenNode {
         nodes[_sender][nodeTier] = nodes[_sender][nodeTier].add(numNodes);
         totalNodes[nodeTier] = totalNodes[nodeTier].add(numNodes);
 
+        _claimBonus();
+
         emit CreateNode(block.timestamp, _sender, numNodes);
     }
 
@@ -234,7 +245,6 @@ contract MainTokenNode {
         uint256 _rewards = getDistributionRewards(_sender);
 
         if (_rewards > 0) {
-            total_rewards = total_rewards.sub(_rewards);
             uint256 totalClaims = users[_sender].total_claims;
             uint256 maxPay = maxPayout(_sender);
 
@@ -242,6 +252,7 @@ contract MainTokenNode {
             if (totalClaims.add(_rewards) > maxPay) {
                 _rewards = maxPay.sub(totalClaims);
             }
+            total_rewards = total_rewards.sub(_rewards);
 
             users[_sender].total_claims = users[_sender].total_claims.add(
                 _rewards
@@ -249,6 +260,7 @@ contract MainTokenNode {
             total_claimed = total_claimed.add(_rewards);
 
             IERC20(TOKEN).safeTransfer(_sender, _rewards);
+            _claimBonus();
 
             users[_sender].last_distPoints = totalDistributePoints;
         }
@@ -300,6 +312,19 @@ contract MainTokenNode {
         uint256 numPossible = rewardsPending.div(tierAmounts[0]);
         claim();
         _compound(0, numPossible);
+        _claimBonus();
+    }
+
+    function _claimBonus() internal {
+        address _sender = msg.sender;
+        uint256 totalClaims = users[_sender].total_claims;
+        uint256 maxPay = maxPayout(_sender);
+        uint256 pendingClaims = maxPay.sub(totalClaims);
+        IBonusRewards(bonusreward).deposit(
+            0,
+            pendingClaims.div(maxReturnPercent).mul(100),
+            _sender
+        );
     }
 
     function maxPayout(address _sender) public view returns (uint256) {
@@ -309,6 +334,30 @@ contract MainTokenNode {
     function isMaxPayout(address _sender) public view returns (bool) {
         return users[_sender].total_claims >= maxPayout(_sender);
     }
+
+    // function nodeMaxPayout() public view returns (uint256) {
+    //     uint256 total = 0;
+    //     for (uint256 i = 0; id < userIndices.length; i++) {
+    //         total = total.add(
+    //             users[userIndices[i]].total_deposits.mul(maxReturnPercent).div(
+    //                 100
+    //             )
+    //         );
+    //     }
+    //     return total;
+    // }
+
+    // function nodeTotalClaims() public view returns (uint256) {
+    //     uint256 total = 0;
+    //     for (uint256 i = 0; id < userIndices.length; i++) {
+    //         total = total.add(users[userIndices[i]].total_claims);
+    //     }
+    //     return total;
+    // }
+
+    // function nodePendingPayout() public view returns (uint256) {
+    //     return nodeMaxPayout().sub(nodeTotalclaims());
+    // }
 
     function _disperse(uint256 amount) internal {
         if (amount > 0) {

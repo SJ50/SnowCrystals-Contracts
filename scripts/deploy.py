@@ -28,7 +28,9 @@ from brownie import (
     SnowDaiGenesisRewardPool,
     SnowCroGenesisRewardPool,
     SnowSnowUsdcLpGenesisRewardPool,
+    SnowBonusRewardPool,
 )
+from brownie.network.gas.strategies import GasNowStrategy
 
 # from web3 import Web3
 # from decimal import *
@@ -39,6 +41,7 @@ import os
 
 
 KEPT_BALANCE = 100 * 10**18
+gas_strategy = GasNowStrategy("fast")
 
 mmf_router_address = "0x145677FC4d9b8F19B5D56d1820c48e0443049a30"
 mmf_factory_address = "0xd590cC180601AEcD6eeADD9B7f2B7611519544f4"
@@ -317,13 +320,35 @@ def deploy_share_token_reward_pool():
     return share_token_reward_pool_contract
 
 
+def deploy_bonus_reward_pool():
+    if len(SnowBonusRewardPool) <= 0:
+        print("deploying bonus reward pool!")
+        deposit_token = os.environ.get("MAIN_TOKEN_LP")
+        snow_bounus_pool_contract = SnowBonusRewardPool.deploy(
+            main_token,
+            pool_start_time,
+            deposit_token,
+            {"from": deployer_account},
+            publish_source=publish_source,
+        )
+        append_new_line(
+            ".env",
+            "export BONUS_REWARD_POOL=" + snow_bounus_pool_contract.address,
+        )
+    snow_bounus_pool_contract = SnowBonusRewardPool[-1]
+    os.environ["BONUS_REWARD_POOL"] = snow_bounus_pool_contract.address
+    return snow_bounus_pool_contract
+
+
 def deploy_main_token_node():
     if len(MainTokenNode) <= 0:
         print("deploying Main node!")
         main_token_lp = os.environ.get("MAIN_TOKEN_LP")
+        bonus_reward_pool = os.environ.get("BONUS_REWARD_POOL")
         main_token_node_contract = MainTokenNode.deploy(
             start_time,
             main_token_lp,
+            bonus_reward_pool,
             {"from": deployer_account},
             publish_source=publish_source,
         )
@@ -503,13 +528,14 @@ def main():
     deploy_maintoken()
     deploy_bondtoken()
     deploy_sharetoken()
-    # get_peg_token()
-    # deploy_main_token_lp()
-    # deploy_share_token_lp()
+    get_peg_token()
+    deploy_main_token_lp()
+    deploy_share_token_lp()
     deploy_boardroom()
     deploy_treasury_contract()
     deploy_main_token_oracle_contract()
     deploy_share_token_reward_pool()
+    deploy_bonus_reward_pool()
     deploy_main_token_node()
     deploy_share_token_node()
     deploy_usdc_genesis_pool()

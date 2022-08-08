@@ -85,6 +85,7 @@ boardroom = os.environ.get("BOARDROOM")
 share_reward_pool = os.environ.get("SHARE_TOKEN_REWARD_POOL")
 main_token_lp = os.environ.get("MAIN_TOKEN_LP")
 share_token_lp = os.environ.get("SHARE_TOKEN_LP")
+bonus_reward_pool = os.environ.get("BONUS_REWARD_POOL")
 main_token_node = os.environ.get("MAIN_TOKEN_NODE")
 share_token_node = os.environ.get("SHARE_TOKEN_NODE")
 usdc_genesis_pool = os.environ.get("USDC_GENESIS_POOL")
@@ -297,6 +298,14 @@ def setup_share_reward_pool():
     share_reward_add_sharetoken_lp_tx.wait(1)
 
 
+def setup_bonus_reward_pool():
+    bonus_reward_pool_contract = Contract(bonus_reward_pool)
+    bonus_reward_pool_set_node_tx = bonus_reward_pool_contract.setNode(
+        main_token_node, {"from": deployer_account}
+    )
+    bonus_reward_pool_set_node_tx.wait(1)
+
+
 def main():
     setup_main_token()
     setup_maintoken_oracle()
@@ -305,4 +314,5 @@ def main():
     setup_boardroom()
     setup_treasury()
     setup_share_reward_pool()
+    setup_bonus_reward_pool()
     # get_all_info()
