@@ -1,10 +1,12 @@
 from ctypes import addressof
+from platform import node
 from tracemalloc import start
 from scripts.helpful_scripts import (
     get_account,
     get_abi,
     get_contract,
     NON_FORKED_LOCAL_BLOCKCHAIN_ENVIRONMENTS,
+    LOCAL_BLOCKCHAIN_ENVIRONMENTS,
     append_new_line,
 )
 from brownie import (
@@ -29,6 +31,8 @@ from brownie import (
     SnowCroGenesisRewardPool,
     SnowSnowUsdcLpGenesisRewardPool,
     SnowBonusRewardPool,
+    SnowSbondRewardPool,
+    LiquidityFund,
 )
 from brownie.network.gas.strategies import GasNowStrategy
 
@@ -43,14 +47,17 @@ import os
 KEPT_BALANCE = 100 * 10**18
 gas_strategy = GasNowStrategy("fast")
 
-mmf_router_address = "0x145677FC4d9b8F19B5D56d1820c48e0443049a30"
-mmf_factory_address = "0xd590cC180601AEcD6eeADD9B7f2B7611519544f4"
-# mmf_router_address = "0xc4e4DdB7a71fCF9Bb7356461Ca75124aA9910653"  ## cronos testnet
-# mmf_factory_address = "0xBa5FBa5A47f7711C3bF4ca035224c95B3cE2E9C9"  ## cronos testnet
+if network.show_active() in NON_FORKED_LOCAL_BLOCKCHAIN_ENVIRONMENTS:
+    mmf_router_address = "0x145677FC4d9b8F19B5D56d1820c48e0443049a30"
+    mmf_factory_address = "0xd590cC180601AEcD6eeADD9B7f2B7611519544f4"
+else:
+    mmf_router_address = "0xc4e4DdB7a71fCF9Bb7356461Ca75124aA9910653"  ## cronos testnet
+    mmf_factory_address = (
+        "0xBa5FBa5A47f7711C3bF4ca035224c95B3cE2E9C9"  ## cronos testnet
+    )
 peg_token = "0xc21223249CA28397B4B6541dfFaEcC539BfF0c59"  # USDC
 
-# deployer_account = get_account(id="snowcrystals-deployer")
-deployer_account = get_account()
+
 publish_source = config["networks"][network.show_active()]["varify"]
 maintoken = Snow
 maintoken_name = "snowcrystals.finance"
@@ -64,18 +71,24 @@ sharetoken_symbol = "GLCR"
 # use datetime to deploy at specific time.
 # start_time = datetime.datetime(2022, 8, 1, 0, 0).timestamp()
 start_time = (
-    time.time() + 60
+    time.time() + 180
 )  # deploy now // sharetoken, oracle - 1day, share_token_reward(chef), node + 7 days, genesis_pool - 12 hr, treasury
-boardroom_start_time = time.time() + 60
+boardroom_start_time = time.time() + 180
 oracle_period = 21600  # 6 hours
-dao_fund = get_account(index=1)
-dev_fund = get_account(index=2)
-airdrop_account = get_account(index=3)
-insurance_fund = get_account(index=3)
-# dao_fund = get_account(id="snowcrystals-dao")
-# dev_fund = get_account(id="snowcrystals-dev")
-# airdrop_account = get_account(id="snowcrystals-airdrop")
-# insurance_fund = get_account(id="snowcrystals-airdrop")
+
+
+if network.show_active() in LOCAL_BLOCKCHAIN_ENVIRONMENTS:
+    deployer_account = get_account()
+    dao_fund = get_account(index=1)
+    dev_fund = get_account(index=2)
+    airdrop_account = get_account(index=3)
+    insurance_fund = get_account(index=3)
+else:
+    deployer_account = get_account(id="snowcrystals-deployer")
+    dao_fund = get_account(id="snowcrystals-dao")
+    dev_fund = get_account(id="snowcrystals-dev")
+    airdrop_account = get_account(id="snowcrystals-airdrop")
+    insurance_fund = get_account(id="snowcrystals-airdrop")
 
 
 def get_peg_token():
@@ -100,7 +113,7 @@ def deploy_maintoken():
         main_token = maintoken.deploy(
             maintoken_name,
             maintoken_symbol,
-            airdrop_account,
+            dao_fund,
             {"from": deployer_account},
             publish_source=publish_source,
         )
@@ -108,6 +121,22 @@ def deploy_maintoken():
     main_token = maintoken[-1]
     os.environ["MAIN_TOKEN"] = main_token.address
     return main_token
+
+
+# def deploy_maintoken():
+#     if len(maintoken) <= 0:
+#         print("deploying maintoken!")
+#         main_token = maintoken.deploy(
+#             maintoken_name,
+#             maintoken_symbol,
+#             airdrop_account,
+#             {"from": deployer_account},
+#             publish_source=publish_source,
+#         )
+#         append_new_line(".env", "export MAIN_TOKEN=" + main_token.address)
+#     main_token = maintoken[-1]
+#     os.environ["MAIN_TOKEN"] = main_token.address
+#     return main_token
 
 
 def deploy_bondtoken():
@@ -233,8 +262,8 @@ def deploy_main_token_lp():
     tokenB = os.environ.get("MAIN_TOKEN")
     amountADesired = 1 * 10**6
     amountBDesired = 1 * 10**18
-    amountAMin = 1 * 10**6
-    amountBMin = 1 * 10**18
+    amountAMin = 0
+    amountBMin = 0
     create_liquidity_pool(
         tokenA=tokenA,
         tokenB=tokenB,
@@ -254,8 +283,8 @@ def deploy_share_token_lp():
     tokenB = os.environ.get("SHARE_TOKEN")
     amountADesired = 1 * 10**6
     amountBDesired = 1 * 10**18 / 100
-    amountAMin = 1 * 10**18
-    amountBMin = 1 * 10**18 / 100
+    amountAMin = 0
+    amountBMin = 0
     create_liquidity_pool(
         tokenA=tokenA,
         tokenB=tokenB,
@@ -271,7 +300,7 @@ def deploy_share_token_lp():
 
 
 def deploy_main_token_oracle_contract():
-    if len(Oracle) <= 0:
+    if len(Oracle) <= 2:
         main_token_lp = os.environ.get("MAIN_TOKEN_LP")
         print("deploying oracle!")
         main_token_oracle = Oracle.deploy(
@@ -323,6 +352,8 @@ def deploy_share_token_reward_pool():
 def deploy_bonus_reward_pool():
     if len(SnowBonusRewardPool) <= 0:
         print("deploying bonus reward pool!")
+        main_token = os.environ.get("MAIN_TOKEN")
+        pool_start_time = start_time
         deposit_token = os.environ.get("MAIN_TOKEN_LP")
         snow_bounus_pool_contract = SnowBonusRewardPool.deploy(
             main_token,
@@ -333,10 +364,10 @@ def deploy_bonus_reward_pool():
         )
         append_new_line(
             ".env",
-            "export BONUS_REWARD_POOL=" + snow_bounus_pool_contract.address,
+            "export NODE_BONUS_REWARD_POOL=" + snow_bounus_pool_contract.address,
         )
     snow_bounus_pool_contract = SnowBonusRewardPool[-1]
-    os.environ["BONUS_REWARD_POOL"] = snow_bounus_pool_contract.address
+    os.environ["NODE_BONUS_REWARD_POOL"] = snow_bounus_pool_contract.address
     return snow_bounus_pool_contract
 
 
@@ -344,11 +375,11 @@ def deploy_main_token_node():
     if len(MainTokenNode) <= 0:
         print("deploying Main node!")
         main_token_lp = os.environ.get("MAIN_TOKEN_LP")
-        bonus_reward_pool = os.environ.get("BONUS_REWARD_POOL")
+        node_bonus_reward_pool = os.environ.get("NODE_BONUS_REWARD_POOL")
         main_token_node_contract = MainTokenNode.deploy(
             start_time,
             main_token_lp,
-            bonus_reward_pool,
+            node_bonus_reward_pool,
             {"from": deployer_account},
             publish_source=publish_source,
         )
@@ -378,13 +409,11 @@ def deploy_share_token_node():
     return share_token_node_contract
 
 
-main_token = os.environ.get("MAIN_TOKEN")
-deposit_fee = 100
-pool_start_time = start_time
-
-
 def deploy_usdc_genesis_pool():
     if len(SnowUsdcGenesisRewardPool) <= 0:
+        main_token = os.environ.get("MAIN_TOKEN")
+        deposit_fee = 100
+        pool_start_time = start_time
         deposit_token = os.environ.get("PEG_TOKEN")
         usdc_genesis_pool_contract = SnowUsdcGenesisRewardPool.deploy(
             main_token,
@@ -405,6 +434,9 @@ def deploy_usdc_genesis_pool():
 
 def deploy_cro_genesis_pool():
     if len(SnowCroGenesisRewardPool) <= 0:
+        main_token = os.environ.get("MAIN_TOKEN")
+        deposit_fee = 100
+        pool_start_time = start_time
         deposit_token = "0x5C7F8A570d578ED84E63fdFA7b1eE72dEae1AE23"
         cro_genesis_pool_contract = SnowCroGenesisRewardPool.deploy(
             main_token,
@@ -425,6 +457,9 @@ def deploy_cro_genesis_pool():
 
 def deploy_btc_genesis_pool():
     if len(SnowBtcGenesisRewardPool) <= 0:
+        main_token = os.environ.get("MAIN_TOKEN")
+        deposit_fee = 100
+        pool_start_time = start_time
         deposit_token = "0x062E66477Faf219F25D27dCED647BF57C3107d52"
         btc_genesis_pool_contract = SnowBtcGenesisRewardPool.deploy(
             main_token,
@@ -445,6 +480,9 @@ def deploy_btc_genesis_pool():
 
 def deploy_eth_genesis_pool():
     if len(SnowEthGenesisRewardPool) <= 0:
+        main_token = os.environ.get("MAIN_TOKEN")
+        deposit_fee = 100
+        pool_start_time = start_time
         deposit_token = "0xe44Fd7fCb2b1581822D0c862B68222998a0c299a"
         eth_genesis_pool_contract = SnowEthGenesisRewardPool.deploy(
             main_token,
@@ -465,6 +503,9 @@ def deploy_eth_genesis_pool():
 
 def deploy_dai_genesis_pool():
     if len(SnowDaiGenesisRewardPool) <= 0:
+        main_token = os.environ.get("MAIN_TOKEN")
+        deposit_fee = 100
+        pool_start_time = start_time
         deposit_token = "0xF2001B145b43032AAF5Ee2884e456CCd805F677D"
         dai_genesis_pool_contract = SnowDaiGenesisRewardPool.deploy(
             main_token,
@@ -485,6 +526,9 @@ def deploy_dai_genesis_pool():
 
 def deploy_usdt_genesis_pool():
     if len(SnowUsdtGenesisRewardPool) <= 0:
+        main_token = os.environ.get("MAIN_TOKEN")
+        deposit_fee = 100
+        pool_start_time = start_time
         deposit_token = "0x66e428c3f67a68878562e79A0234c1F83c208770"
         usdt_genesis_pool_contract = SnowUsdtGenesisRewardPool.deploy(
             main_token,
@@ -505,6 +549,9 @@ def deploy_usdt_genesis_pool():
 
 def deploy_snowusdclp_genesis_pool():
     if len(SnowSnowUsdcLpGenesisRewardPool) <= 0:
+        main_token = os.environ.get("MAIN_TOKEN")
+        deposit_fee = 100
+        pool_start_time = start_time
         deposit_token = os.environ.get("MAIN_TOKEN_LP")
         snowusdclp_genesis_pool_contract = SnowSnowUsdcLpGenesisRewardPool.deploy(
             main_token,
@@ -522,6 +569,58 @@ def deploy_snowusdclp_genesis_pool():
     snowusdclp_genesis_pool_contract = SnowSnowUsdcLpGenesisRewardPool[-1]
     os.environ["SNOWUSDC_GENESIS_POOL"] = snowusdclp_genesis_pool_contract.address
     return snowusdclp_genesis_pool_contract
+
+
+def deploy_sbond_reward_pool():
+    if len(SnowSbondRewardPool) <= 0:
+        main_token = os.environ.get("MAIN_TOKEN")
+        deposit_fee = 0
+        pool_start_time = start_time
+        deposit_token = os.environ.get("BOND_TOKEN")
+        sbond_reward_pool_contract = SnowSbondRewardPool.deploy(
+            main_token,
+            pool_start_time,
+            dao_fund,
+            deposit_fee,
+            deposit_token,
+            {"from": deployer_account},
+            publish_source=publish_source,
+        )
+        append_new_line(
+            ".env",
+            "export SBOND_REWARD_POOL=" + sbond_reward_pool_contract.address,
+        )
+    sbond_reward_pool_contract = SnowSbondRewardPool[-1]
+    os.environ["SBOND_REWARD_POOL"] = sbond_reward_pool_contract.address
+    return sbond_reward_pool_contract
+
+
+def deploy_liquidity_fund():
+    if len(LiquidityFund) <= 0:
+        main_token = os.environ.get("MAIN_TOKEN")
+        peg_token = os.environ.get("PEG_TOKEN")
+        sbond_bonus_reward_pool = os.environ.get("SBOND_REWARD_POOL")
+        node_bonus_reward_pool = os.environ.get("NODE_BONUS_REWARD_POOL")
+        treasury = os.environ.get("TREASURY")
+        liquidity_fund_contract = LiquidityFund.deploy(
+            dao_fund,
+            dev_fund,
+            peg_token,
+            main_token,
+            sbond_bonus_reward_pool,
+            node_bonus_reward_pool,
+            treasury,
+            mmf_router_address,
+            {"from": deployer_account},
+            publish_source=publish_source,
+        )
+        append_new_line(
+            ".env",
+            "export LIQUIDITY_FUND=" + liquidity_fund_contract.address,
+        )
+    liquidity_fund_contract = LiquidityFund[-1]
+    os.environ["LIQUIDITY_FUND"] = liquidity_fund_contract.address
+    return liquidity_fund_contract
 
 
 def main():
@@ -545,3 +644,5 @@ def main():
     deploy_eth_genesis_pool()
     deploy_btc_genesis_pool()
     deploy_snowusdclp_genesis_pool()
+    deploy_sbond_reward_pool()
+    deploy_liquidity_fund()

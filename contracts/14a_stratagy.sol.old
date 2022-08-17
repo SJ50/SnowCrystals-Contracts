@@ -1,0 +1,858 @@
+/**
+ *Submitted for verification at cronoscan.com on 2022-05-22
+ */
+
+/**
+ *Submitted for verification at cronoscan.com on 2022-02-13
+ */
+
+/**
+ https://cronoscan.com/address/0xfb3fa801E9804b6DCA7a7D8251e62fF20434dD5d#code
+  */
+
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.6;
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20Pausable.sol";
+
+interface IStrategy {
+    // Total want tokens managed by strategy
+    function wantLockedTotal() external view returns (uint256);
+
+    // Sum of all shares of users to wantLockedTotal
+    function sharesTotal() external view returns (uint256);
+
+    function wantAddress() external view returns (address);
+
+    function token0Address() external view returns (address);
+
+    function token1Address() external view returns (address);
+
+    function earnedAddress() external view returns (address);
+
+    function getPricePerFullShare() external view returns (uint256);
+
+    // Main want token compounding function
+    function earn() external;
+
+    // Transfer want tokens autoFarm -> strategy
+    function deposit(address _userAddress, uint256 _wantAmt)
+        external
+        returns (uint256);
+
+    // Transfer want tokens strategy -> autoFarm
+    function withdraw(address _userAddress, uint256 _wantAmt)
+        external
+        returns (uint256);
+
+    function migrateFrom(
+        address _oldStrategy,
+        uint256 _oldWantLockedTotal,
+        uint256 _oldSharesTotal
+    ) external;
+
+    function inCaseTokensGetStuck(address _token, uint256 _amount) external;
+
+    function inFarmBalance() external view returns (uint256);
+
+    function totalBalance() external view returns (uint256);
+}
+
+interface IFarmingPool {
+    function deposit(uint256 _pid, uint256 _amount) external;
+
+    function withdraw(uint256 _pid, uint256 _amount) external;
+
+    function pendingTIGER(uint256 _pid, address _user)
+        external
+        view
+        returns (uint256);
+
+    function userInfo(uint256 _pid, address _user)
+        external
+        view
+        returns (uint256 amount, uint256 rewardDebt);
+}
+
+interface IMeerkatRouter02 {
+    function factory() external pure returns (address);
+
+    function WETH() external pure returns (address);
+
+    function swapFeeReward() external pure returns (address);
+
+    function addLiquidity(
+        address tokenA,
+        address tokenB,
+        uint256 amountADesired,
+        uint256 amountBDesired,
+        uint256 amountAMin,
+        uint256 amountBMin,
+        address to,
+        uint256 deadline
+    )
+        external
+        returns (
+            uint256 amountA,
+            uint256 amountB,
+            uint256 liquidity
+        );
+
+    function addLiquidityETH(
+        address token,
+        uint256 amountTokenDesired,
+        uint256 amountTokenMin,
+        uint256 amountETHMin,
+        address to,
+        uint256 deadline
+    )
+        external
+        payable
+        returns (
+            uint256 amountToken,
+            uint256 amountETH,
+            uint256 liquidity
+        );
+
+    function removeLiquidity(
+        address tokenA,
+        address tokenB,
+        uint256 liquidity,
+        uint256 amountAMin,
+        uint256 amountBMin,
+        address to,
+        uint256 deadline
+    ) external returns (uint256 amountA, uint256 amountB);
+
+    function removeLiquidityETH(
+        address token,
+        uint256 liquidity,
+        uint256 amountTokenMin,
+        uint256 amountETHMin,
+        address to,
+        uint256 deadline
+    ) external returns (uint256 amountToken, uint256 amountETH);
+
+    function removeLiquidityWithPermit(
+        address tokenA,
+        address tokenB,
+        uint256 liquidity,
+        uint256 amountAMin,
+        uint256 amountBMin,
+        address to,
+        uint256 deadline,
+        bool approveMax,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external returns (uint256 amountA, uint256 amountB);
+
+    function removeLiquidityETHWithPermit(
+        address token,
+        uint256 liquidity,
+        uint256 amountTokenMin,
+        uint256 amountETHMin,
+        address to,
+        uint256 deadline,
+        bool approveMax,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external returns (uint256 amountToken, uint256 amountETH);
+
+    function swapExactTokensForTokens(
+        uint256 amountIn,
+        uint256 amountOutMin,
+        address[] calldata path,
+        address to,
+        uint256 deadline
+    ) external returns (uint256[] memory amounts);
+
+    function swapTokensForExactTokens(
+        uint256 amountOut,
+        uint256 amountInMax,
+        address[] calldata path,
+        address to,
+        uint256 deadline
+    ) external returns (uint256[] memory amounts);
+
+    function swapExactETHForTokens(
+        uint256 amountOutMin,
+        address[] calldata path,
+        address to,
+        uint256 deadline
+    ) external payable returns (uint256[] memory amounts);
+
+    function swapTokensForExactETH(
+        uint256 amountOut,
+        uint256 amountInMax,
+        address[] calldata path,
+        address to,
+        uint256 deadline
+    ) external returns (uint256[] memory amounts);
+
+    function swapExactTokensForETH(
+        uint256 amountIn,
+        uint256 amountOutMin,
+        address[] calldata path,
+        address to,
+        uint256 deadline
+    ) external returns (uint256[] memory amounts);
+
+    function swapETHForExactTokens(
+        uint256 amountOut,
+        address[] calldata path,
+        address to,
+        uint256 deadline
+    ) external payable returns (uint256[] memory amounts);
+
+    function quote(
+        uint256 amountA,
+        uint256 reserveA,
+        uint256 reserveB
+    ) external pure returns (uint256 amountB);
+
+    function getAmountOut(
+        uint256 amountIn,
+        uint256 reserveIn,
+        uint256 reserveOut,
+        uint256 swapFee
+    ) external pure returns (uint256 amountOut);
+
+    function getAmountIn(
+        uint256 amountOut,
+        uint256 reserveIn,
+        uint256 reserveOut,
+        uint256 swapFee
+    ) external pure returns (uint256 amountIn);
+
+    function getAmountsOut(uint256 amountIn, address[] calldata path)
+        external
+        view
+        returns (uint256[] memory amounts);
+
+    function getAmountsIn(uint256 amountOut, address[] calldata path)
+        external
+        view
+        returns (uint256[] memory amounts);
+
+    function removeLiquidityETHSupportingFeeOnTransferTokens(
+        address token,
+        uint256 liquidity,
+        uint256 amountTokenMin,
+        uint256 amountETHMin,
+        address to,
+        uint256 deadline
+    ) external returns (uint256 amountETH);
+
+    function removeLiquidityETHWithPermitSupportingFeeOnTransferTokens(
+        address token,
+        uint256 liquidity,
+        uint256 amountTokenMin,
+        uint256 amountETHMin,
+        address to,
+        uint256 deadline,
+        bool approveMax,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external returns (uint256 amountETH);
+
+    function swapExactTokensForTokensSupportingFeeOnTransferTokens(
+        uint256 amountIn,
+        uint256 amountOutMin,
+        address[] calldata path,
+        address to,
+        uint256 deadline
+    ) external;
+
+    function swapExactETHForTokensSupportingFeeOnTransferTokens(
+        uint256 amountOutMin,
+        address[] calldata path,
+        address to,
+        uint256 deadline
+    ) external payable;
+
+    function swapExactTokensForETHSupportingFeeOnTransferTokens(
+        uint256 amountIn,
+        uint256 amountOutMin,
+        address[] calldata path,
+        address to,
+        uint256 deadline
+    ) external;
+}
+
+contract Strategy is IStrategy, Ownable, ReentrancyGuard, Pausable {
+    // Maximises yields in quickswap
+
+    using SafeMath for uint256;
+    using SafeERC20 for IERC20;
+
+    address public farmContractAddress =
+        address(0x44B4a1e8f34Bb52ed39854aD218FF94D2D5b4800); // address of farm, eg, PCS, Thugs etc.
+    uint256 public pid; // pid of pool in farmContractAddress
+    address public override wantAddress;
+    address public override token0Address;
+    address public override token1Address;
+    address public override earnedAddress;
+    address public mmfRouterAddress =
+        address(0x145677FC4d9b8F19B5D56d1820c48e0443049a30); // mmf Router
+    mapping(address => mapping(address => address[])) public paths;
+
+    address public constant usdcAddress =
+        address(0xc21223249CA28397B4B6541dfFaEcC539BfF0c59);
+
+    address public controller;
+    address public strategist;
+    address public timelock;
+    bool public notPublic = false; // allow public to call earn() function
+
+    uint256 public lastEarnTime = 0;
+    uint256 public autoEarnLimit = 100000000; // 100 USDC
+    uint256 public autoEarnDelaySeconds = 6 hours;
+    bool public autoEarnEnabled = false;
+
+    uint256 public override wantLockedTotal = 0;
+    uint256 public override sharesTotal = 0;
+    uint256 public totalEarned = 0;
+    uint256 public totalLionBuyBack = 0;
+
+    uint256 public controllerFee = 0; //1%
+    uint256 public constant controllerFeeMax = 10000; // 100 = 1%
+    uint256 public constant controllerFeeUL = 300;
+
+    uint256 public constant buyBackRateMax = 10000; // 100 = 1%
+    uint256 public constant buyBackRateUL = 800; // 8%
+
+    uint256 public buyBackRate = 500; // 5%
+    address public buyBackAddress =
+        address(0x078c0Aa151565388a72D1d37781130B2d9bEaf8b); // treasury
+    address public buyBackToken =
+        address(0x49fB98F9b4a3183Cd88e7a115144fdf00fa6fB95); // lion to treasury
+
+    uint256 public entranceFeeFactor = 10000; // 0% entrance fee (goes to pool + prevents front-running)
+    uint256 public constant entranceFeeFactorMax = 10000; // 100 = 1%
+    uint256 public constant entranceFeeFactorLL = 9950; // 0.5% is the max entrance fee settable. LL = lowerlimit
+
+    event Deposit(uint256 amount);
+    event Withdraw(uint256 amount);
+    event Farm(uint256 amount);
+    event Compound(
+        address token0Address,
+        uint256 token0Amt,
+        address token1Address,
+        uint256 token1Amt
+    );
+    event Earned(address earnedAddress, uint256 earnedAmt);
+    event BuyBack(
+        address earnedAddress,
+        uint256 earnedAmt,
+        uint256 buyBackAmt,
+        address receiver
+    );
+    event DistributeFee(address earnedAddress, uint256 fee, address receiver);
+    event InCaseTokensGetStuck(
+        address tokenAddress,
+        uint256 tokenAmt,
+        address receiver
+    );
+    event ExecuteTransaction(
+        address indexed target,
+        uint256 value,
+        string signature,
+        bytes data
+    );
+
+    // _controller:  VaultBank
+    constructor(
+        address _controller,
+        uint256 _pid,
+        address _wantAddress,
+        address _earnedAddress,
+        address _token0,
+        address _token1
+    ) {
+        controller = _controller;
+        strategist = msg.sender;
+        // to call earn if public not allowed
+
+        wantAddress = _wantAddress;
+
+        token0Address = _token0;
+        token1Address = _token1;
+
+        pid = _pid;
+        earnedAddress = _earnedAddress;
+    }
+
+    modifier onlyController() {
+        require(controller == msg.sender, "caller is not the controller");
+        _;
+    }
+
+    modifier onlyStrategist() {
+        require(
+            strategist == msg.sender || owner() == msg.sender,
+            "VaultStrategy: caller is not the strategist"
+        );
+        _;
+    }
+
+    modifier onlyTimelock() {
+        require(
+            timelock == msg.sender,
+            "VaultStrategy: caller is not timelock"
+        );
+        _;
+    }
+
+    function isAuthorised(address _account) public view returns (bool) {
+        return
+            (_account == owner()) ||
+            (msg.sender == strategist) ||
+            (msg.sender == timelock);
+    }
+
+    function _checkAutoEarn() internal {
+        if (!paused() && !notPublic && autoEarnEnabled) {
+            uint256 _pendingHarvestDollarValue = pendingHarvestDollarValue();
+            if (_pendingHarvestDollarValue >= autoEarnLimit) {
+                earn();
+            }
+        }
+    }
+
+    function inFarmBalance() public view override returns (uint256) {
+        (uint256 amount, ) = IFarmingPool(farmContractAddress).userInfo(
+            pid,
+            address(this)
+        );
+        return amount;
+    }
+
+    function totalBalance() external view override returns (uint256) {
+        return IERC20(wantAddress).balanceOf(address(this)) + inFarmBalance();
+    }
+
+    function getPricePerFullShare() external view override returns (uint256) {
+        return
+            (sharesTotal == 0)
+                ? 1e18
+                : wantLockedTotal.mul(1e18).div(sharesTotal);
+    }
+
+    // Receives new deposits from user
+    function deposit(address, uint256 _wantAmt)
+        external
+        override
+        onlyController
+        nonReentrant
+        whenNotPaused
+        returns (uint256)
+    {
+        _checkAutoEarn();
+        IERC20(wantAddress).safeTransferFrom(
+            address(msg.sender),
+            address(this),
+            _wantAmt
+        );
+
+        uint256 sharesAdded = _wantAmt;
+        if (wantLockedTotal > 0 && sharesTotal > 0) {
+            sharesAdded = _wantAmt
+                .mul(sharesTotal)
+                .mul(entranceFeeFactor)
+                .div(wantLockedTotal)
+                .div(entranceFeeFactorMax);
+        }
+        sharesTotal = sharesTotal.add(sharesAdded);
+
+        _farm();
+
+        emit Deposit(_wantAmt);
+
+        return sharesAdded;
+    }
+
+    function farm() public nonReentrant {
+        _farm();
+    }
+
+    function _farm() internal {
+        IERC20 _want = IERC20(wantAddress);
+        uint256 wantAmt = _want.balanceOf(address(this));
+        wantLockedTotal = wantLockedTotal.add(wantAmt);
+
+        _want.safeIncreaseAllowance(farmContractAddress, wantAmt);
+        IFarmingPool(farmContractAddress).deposit(pid, wantAmt);
+
+        emit Farm(wantAmt);
+    }
+
+    function withdraw(address, uint256 _wantAmt)
+        external
+        override
+        onlyController
+        nonReentrant
+        returns (uint256)
+    {
+        require(_wantAmt > 0, "VaultStrategy: !_wantAmt");
+        _checkAutoEarn();
+
+        IFarmingPool(farmContractAddress).withdraw(pid, _wantAmt);
+
+        uint256 wantAmt = IERC20(wantAddress).balanceOf(address(this));
+        if (_wantAmt > wantAmt) {
+            _wantAmt = wantAmt;
+        }
+
+        if (wantLockedTotal < _wantAmt) {
+            _wantAmt = wantLockedTotal;
+        }
+
+        uint256 sharesRemoved = _wantAmt.mul(sharesTotal).div(wantLockedTotal);
+        if (sharesRemoved > sharesTotal) {
+            sharesRemoved = sharesTotal;
+        }
+        sharesTotal = sharesTotal.sub(sharesRemoved);
+        wantLockedTotal = wantLockedTotal.sub(_wantAmt);
+
+        IERC20(wantAddress).safeTransfer(address(msg.sender), _wantAmt);
+
+        emit Withdraw(_wantAmt);
+
+        return sharesRemoved;
+    }
+
+    // 1. Harvest farm tokens
+    // 2. Converts farm tokens into want tokens
+    // 3. Deposits want tokens
+    function earn() public override whenNotPaused {
+        require(
+            !notPublic || isAuthorised(msg.sender),
+            "VaultStrategy: !authorised"
+        );
+
+        // Harvest farm tokens
+        IFarmingPool(farmContractAddress).withdraw(pid, 0);
+
+        // Converts farm tokens into want tokens
+        uint256 earnedAmt = IERC20(earnedAddress).balanceOf(address(this));
+
+        emit Earned(earnedAddress, earnedAmt);
+
+        distributeFees(earnedAmt);
+        buyBack(earnedAmt);
+
+        uint256 remainAmt = IERC20(earnedAddress).balanceOf(address(this));
+
+        // track totalEarned in dollar
+        totalEarned = totalEarned.add(
+            exchangeRate(earnedAddress, usdcAddress, remainAmt)
+        );
+
+        if (earnedAddress != token0Address) {
+            _swapToken(
+                earnedAddress,
+                token0Address,
+                remainAmt.div(2),
+                address(this)
+            );
+        }
+
+        if (earnedAddress != token1Address) {
+            _swapToken(
+                earnedAddress,
+                token1Address,
+                remainAmt.div(2),
+                address(this)
+            );
+        }
+
+        // Get want tokens, ie. add liquidity
+        uint256 token0Amt = IERC20(token0Address).balanceOf(address(this));
+        uint256 token1Amt = IERC20(token1Address).balanceOf(address(this));
+        if (token0Amt > 0 && token1Amt > 0) {
+            _addLiquidity(token0Address, token1Address, token0Amt, token1Amt);
+            emit Compound(token0Address, token0Amt, token1Address, token1Amt);
+        }
+
+        lastEarnTime = block.timestamp;
+
+        _farm();
+    }
+
+    function buyBack(uint256 _earnedAmt) internal returns (uint256) {
+        if (
+            _earnedAmt <= 0 || buyBackRate <= 0 || buyBackAddress == address(0)
+        ) {
+            return 0;
+        }
+        uint256 _buyBackAmt = _earnedAmt.mul(buyBackRate).div(buyBackRateMax);
+        uint256 _before = IERC20(buyBackToken).balanceOf(buyBackAddress);
+        _swapToken(earnedAddress, buyBackToken, _buyBackAmt, buyBackAddress);
+        uint256 _after = IERC20(buyBackToken).balanceOf(buyBackAddress);
+        uint256 _newReward = _after.sub(_before);
+        totalLionBuyBack += _newReward;
+        emit BuyBack(earnedAddress, _buyBackAmt, _newReward, buyBackAddress);
+        return _buyBackAmt;
+    }
+
+    function distributeFees(uint256 _earnedAmt)
+        internal
+        returns (uint256 _fee)
+    {
+        if (_earnedAmt > 0) {
+            // Performance fee
+            if (controllerFee > 0) {
+                _fee = _earnedAmt.mul(controllerFee).div(controllerFeeMax);
+                IERC20(earnedAddress).safeTransfer(owner(), _fee);
+                emit DistributeFee(earnedAddress, _fee, owner());
+            }
+        }
+    }
+
+    function exchangeRate(
+        address _inputToken,
+        address _outputToken,
+        uint256 _tokenAmount
+    ) public view returns (uint256) {
+        uint256[] memory amounts = IMeerkatRouter02(mmfRouterAddress)
+            .getAmountsOut(_tokenAmount, paths[_inputToken][_outputToken]);
+        return amounts[amounts.length - 1];
+    }
+
+    function pendingHarvest() public view returns (uint256) {
+        uint256 _earnedBal = IERC20(earnedAddress).balanceOf(address(this));
+        return
+            IFarmingPool(farmContractAddress)
+                .pendingTIGER(pid, address(this))
+                .add(_earnedBal);
+    }
+
+    function pendingHarvestDollarValue() public view returns (uint256) {
+        uint256 _pending = pendingHarvest();
+        return
+            (_pending == 0)
+                ? 0
+                : exchangeRate(earnedAddress, usdcAddress, _pending);
+    }
+
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+
+    function setStrategist(address _strategist) external onlyOwner {
+        strategist = _strategist;
+    }
+
+    function setEntranceFeeFactor(uint256 _entranceFeeFactor)
+        external
+        onlyOwner
+    {
+        require(
+            _entranceFeeFactor > entranceFeeFactorLL,
+            "VaultStrategy: !safe - too low"
+        );
+        require(
+            _entranceFeeFactor <= entranceFeeFactorMax,
+            "VaultStrategy: !safe - too high"
+        );
+        entranceFeeFactor = _entranceFeeFactor;
+    }
+
+    function setControllerFee(uint256 _controllerFee) external onlyOwner {
+        require(_controllerFee <= controllerFeeUL, "VaultStrategy: too high");
+        controllerFee = _controllerFee;
+    }
+
+    function setBuyBackRate(uint256 _buyBackRate) external onlyOwner {
+        require(buyBackRate <= buyBackRateUL, "VaultStrategy: too high");
+        buyBackRate = _buyBackRate;
+    }
+
+    function setBuyBackAddress(address _buyBackAddress) external onlyOwner {
+        require(buyBackAddress != address(0), "zero");
+        buyBackAddress = _buyBackAddress;
+    }
+
+    function setBuyBackToken(address _buyBackToken) external onlyOwner {
+        require(_buyBackToken != address(0), "zero");
+        buyBackToken = _buyBackToken;
+    }
+
+    function setMmfRouterAddress(address _routerAddress) external onlyOwner {
+        require(_routerAddress != address(0), "zero");
+        mmfRouterAddress = _routerAddress;
+    }
+
+    function setNotPublic(bool _notPublic) external onlyOwner {
+        notPublic = _notPublic;
+    }
+
+    function setAutoEarnLimit(uint256 _autoEarnLimit) external onlyOwner {
+        autoEarnLimit = _autoEarnLimit;
+    }
+
+    function setAutoEarnStatus(bool _status) external onlyOwner {
+        autoEarnEnabled = _status;
+    }
+
+    function setAutoEarnDelaySeconds(uint256 _autoEarnDelaySeconds)
+        external
+        onlyOwner
+    {
+        autoEarnDelaySeconds = _autoEarnDelaySeconds;
+    }
+
+    function setMainPaths(
+        address[] memory _earnedToToken0Path,
+        address[] memory _earnedToToken1Path,
+        address[] memory _earnedToBuyBackTokenPath,
+        address[] memory _earnedToUsdcPath,
+        address[] memory _token0ToEarnedPath,
+        address[] memory _token1ToEarnedPath
+    ) external onlyOwner {
+        paths[earnedAddress][token0Address] = _earnedToToken0Path;
+        paths[earnedAddress][token1Address] = _earnedToToken1Path;
+        paths[earnedAddress][usdcAddress] = _earnedToUsdcPath;
+        paths[earnedAddress][buyBackToken] = _earnedToBuyBackTokenPath;
+        paths[token0Address][earnedAddress] = _token0ToEarnedPath;
+        paths[token1Address][earnedAddress] = _token1ToEarnedPath;
+    }
+
+    function setPaths(
+        address _inputToken,
+        address _outputToken,
+        address[] memory _path
+    ) external onlyOwner {
+        paths[_inputToken][_outputToken] = _path;
+    }
+
+    function _swapToken(
+        address _inputToken,
+        address _outputToken,
+        uint256 _amount,
+        address to
+    ) internal {
+        IERC20(_inputToken).safeIncreaseAllowance(mmfRouterAddress, _amount);
+        IMeerkatRouter02(mmfRouterAddress).swapExactTokensForTokens(
+            _amount,
+            exchangeRate(_inputToken, _outputToken, _amount),
+            paths[_inputToken][_outputToken],
+            to,
+            block.timestamp.add(1800)
+        );
+    }
+
+    function _addLiquidity(
+        address _tokenA,
+        address _tokenB,
+        uint256 _amountADesired,
+        uint256 _amountBDesired
+    ) internal {
+        IERC20(_tokenA).safeIncreaseAllowance(
+            mmfRouterAddress,
+            _amountADesired
+        );
+        IERC20(_tokenB).safeIncreaseAllowance(
+            mmfRouterAddress,
+            _amountBDesired
+        );
+        IMeerkatRouter02(mmfRouterAddress).addLiquidity(
+            _tokenA,
+            _tokenB,
+            _amountADesired,
+            _amountBDesired,
+            0,
+            0,
+            address(this),
+            block.timestamp.add(1800)
+        );
+    }
+
+    function inCaseTokensGetStuck(address _token, uint256 _amount)
+        external
+        override
+        onlyOwner
+    {
+        require(_token != earnedAddress, "!safe");
+        require(_token != wantAddress, "!safe");
+        address _controller = controller;
+        IERC20(_token).safeTransfer(_controller, _amount);
+        emit InCaseTokensGetStuck(_token, _amount, _controller);
+    }
+
+    function togglePause() external onlyOwner {
+        if (paused()) _unpause();
+        else _pause();
+    }
+
+    function migrateFrom(
+        address,
+        uint256,
+        uint256
+    ) external override onlyController {}
+
+    /* ========== EMERGENCY ========== */
+
+    function setController(address _controller) external {
+        require(_controller != address(0), "invalidAddress");
+        require(
+            controller == msg.sender || timelock == msg.sender,
+            "caller is not the controller nor timelock"
+        );
+        controller = _controller;
+    }
+
+    function setTimelock(address _timelock) external {
+        require(
+            timelock == msg.sender ||
+                (timelock == address(0) && owner() == msg.sender),
+            "!timelock"
+        );
+        timelock = _timelock;
+    }
+
+    /**
+     * @dev This is from Timelock contract.
+     */
+    function executeTransaction(
+        address target,
+        uint256 value,
+        string memory signature,
+        bytes memory data
+    ) external onlyTimelock returns (bytes memory) {
+        bytes memory callData;
+
+        if (bytes(signature).length == 0) {
+            callData = data;
+        } else {
+            callData = abi.encodePacked(
+                bytes4(keccak256(bytes(signature))),
+                data
+            );
+        }
+
+        // solium-disable-next-line security/no-call-value
+        (bool success, bytes memory returnData) = target.call{value: value}(
+            callData
+        );
+        require(
+            success,
+            "VaultStrategy::executeTransaction: Transaction execution reverted."
+        );
+
+        emit ExecuteTransaction(target, value, signature, data);
+
+        return returnData;
+    }
+}

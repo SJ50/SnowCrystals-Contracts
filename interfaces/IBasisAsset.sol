@@ -19,4 +19,6 @@ interface IBasisAsset {
     function distributeReward(address _launcherAddress) external;
 
     function totalBurned() external view returns (uint256);
+
+    function governanceRecoverUnsupported(address _token, address _to) external;
 }

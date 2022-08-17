@@ -10,9 +10,11 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./lib/Babylonian.sol";
 import "./access/Operator.sol";
 import "./utils/ContractGuard.sol";
+
 import "../interfaces/IBasisAsset.sol";
 import "../interfaces/IOracle.sol";
 import "../interfaces/IBoardroom.sol";
+import "../interfaces/ILiquidityFund.sol";
 
 /*
     https://snowcrystals.finance
@@ -45,10 +47,12 @@ contract Treasury is ContractGuard {
     // core components
     address public snow;
     address public sBond;
-    address public Glcr;
+    address public glcr;
 
     address public boardroom;
     address public snowOracle;
+
+    address public liquidityFund;
 
     // price
     uint256 public snowPriceOne;
@@ -83,7 +87,7 @@ contract Treasury is ContractGuard {
     address public daoFund;
     uint256 public daoFundSharedPercent;
 
-    address public devFund;
+    address private devFund;
     uint256 public devFundSharedPercent;
 
     /* =================== Events =================== */
@@ -134,7 +138,7 @@ contract Treasury is ContractGuard {
         require(
             IBasisAsset(snow).operator() == address(this) &&
                 IBasisAsset(sBond).operator() == address(this) &&
-                IBasisAsset(Glcr).operator() == address(this) &&
+                IBasisAsset(glcr).operator() == address(this) &&
                 Operator(boardroom).operator() == address(this),
             "Treasury: need more permission"
         );
@@ -269,16 +273,18 @@ contract Treasury is ContractGuard {
     function initialize(
         address _snow,
         address _sBond,
-        address _Glcr,
+        address _glcr,
         address _snowOracle,
         address _boardroom,
+        address _liquidityFund,
         uint256 _startTime
     ) public notInitialized {
         snow = _snow;
         sBond = _sBond;
-        Glcr = _Glcr;
+        glcr = _glcr;
         snowOracle = _snowOracle;
         boardroom = _boardroom;
+        liquidityFund = _liquidityFund;
         startTime = _startTime;
 
         snowPriceOne = 10**18; // This is to allow a PEG of 1 Snow per USDC
@@ -330,6 +336,10 @@ contract Treasury is ContractGuard {
 
     function setSnowOracle(address _snowOracle) external onlyOperator {
         snowOracle = _snowOracle;
+    }
+
+    function setLiquidityFund(address _liquidityFund) external onlyOperator {
+        liquidityFund = _liquidityFund;
     }
 
     function setSnowPriceCeiling(uint256 _snowPriceCeiling)
@@ -759,6 +769,10 @@ contract Treasury is ContractGuard {
                 }
             }
         }
+        ILiquidityFund(liquidityFund).sendToBonus(
+            previousEpochSnowPrice,
+            snowPriceCeiling
+        );
     }
 
     function governanceRecoverUnsupported(
@@ -769,7 +783,7 @@ contract Treasury is ContractGuard {
         // do not allow to drain core tokens
         require(address(_token) != address(snow), "snow");
         require(address(_token) != address(sBond), "bond");
-        require(address(_token) != address(Glcr), "share");
+        require(address(_token) != address(glcr), "share");
         _token.safeTransfer(_to, _amount);
     }
 
@@ -804,5 +818,31 @@ contract Treasury is ContractGuard {
             _amount,
             _to
         );
+    }
+
+    // function liquidityFundGovernanceRecoverUnsupported(
+    //     address _token,
+    //     uint256 _amount,
+    //     address _to
+    // ) external onlyOperator {
+    //     ILiquidity(liquidityFund).governanceRecoverUnsupported(
+    //         _token,
+    //         _amount,
+    //         _to
+    //     );
+    // }
+
+    function snowGovernanceRecoverUnsupported(address _token, address _to)
+        external
+        onlyOperator
+    {
+        IBasisAsset(snow).governanceRecoverUnsupported(_token, _to);
+    }
+
+    function glcrGovernanceRecoverUnsupported(address _token, address _to)
+        external
+        onlyOperator
+    {
+        IBasisAsset(glcr).governanceRecoverUnsupported(_token, _to);
     }
 }

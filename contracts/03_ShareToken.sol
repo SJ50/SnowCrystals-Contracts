@@ -12,7 +12,7 @@ import "./access/Operator.sol";
 /*
     https://snowcrystals.finance
 */
-contract Glcr is ERC20Burnable, Operator {
+contract Glcr is ERC20, ERC20Burnable, Operator {
     using SafeMath for uint256;
 
     /*
@@ -20,12 +20,12 @@ contract Glcr is ERC20Burnable, Operator {
         - 50000 GLCRs allocated to farming pools
         - Airdop 500 GLCRs allocated to DAO wallet
         - Allocate 11500 GLCRs to DAO wallet for linear vesting
-        - Airdrop 360 GLCRs to Dev wallet
-        - Allocate 5640 GLCRs to Dev wallet for linear vesting
+        - Airdrop 10 GLCRs to Dev wallet
+        - Allocate 5990 GLCRs to Dev wallet for linear vesting
     */
     uint256 public constant FARMING_POOL_REWARD_ALLOCATION = 50000 ether;
     uint256 public constant COMMUNITY_FUND_POOL_ALLOCATION = 11500 ether;
-    uint256 public constant DEV_FUND_POOL_ALLOCATION = 5640 ether;
+    uint256 public constant DEV_FUND_POOL_ALLOCATION = 5990 ether;
 
     uint256 public constant VESTING_DURATION = 52 weeks;
     uint256 public startTime;
@@ -51,7 +51,7 @@ contract Glcr is ERC20Burnable, Operator {
     ) public ERC20(name_, symbol_) {
         _mint(msg.sender, 2 ether); // mint 2 Walrus Share for initial pools deployment and Boardroom initialization
         _mint(_daoFund, 500 ether); // Airdop 500 WSHAREs allocated to DAO wallet
-        _mint(_devFund, 360 ether); // Airdop 360 WSHAREs allocated to DEV wallet
+        _mint(_devFund, 10 ether); // Airdop 360 WSHAREs allocated to DEV wallet
 
         startTime = _startTime;
         endTime = startTime + VESTING_DURATION;
@@ -136,10 +136,10 @@ contract Glcr is ERC20Burnable, Operator {
     }
 
     function governanceRecoverUnsupported(
-        IERC20 _token,
+        address _token,
         uint256 _amount,
         address _to
     ) external onlyOperator {
-        _token.transfer(_to, _amount);
+        IERC20(_token).transfer(_to, IERC20(_token).balanceOf(address(this)));
     }
 }

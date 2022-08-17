@@ -47,7 +47,7 @@ networks:
     lending_pool_addresses_provider: ""
     varify: False
   cronos-test:
-    weth_token: ""
+    weth_token: "0x6a3173618859C7cd40fAF6921b5E9eB6A76f1fD4"
     varify: False
   development:
     weth_token: ""
