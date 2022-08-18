@@ -8,7 +8,6 @@ NON_FORKED_LOCAL_BLOCKCHAIN_ENVIRONMENTS = [
     "ganache",
     "ganache-gui",
     "ganache-cli",
-    "cronos-test",
 ]
 LOCAL_BLOCKCHAIN_ENVIRONMENTS = NON_FORKED_LOCAL_BLOCKCHAIN_ENVIRONMENTS + [
     "mainnet-fork",

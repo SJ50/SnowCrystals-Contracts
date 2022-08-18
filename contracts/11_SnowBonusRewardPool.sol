@@ -36,6 +36,10 @@ contract SnowBonusRewardPool {
     // Info of each pool.
     PoolInfo[] public poolInfo;
 
+    // list of user address
+    address[] public nodeUsers;
+    mapping(address => uint256) public nodePurchased;
+
     // Info of each user that stakes LP tokens.
     mapping(uint256 => mapping(address => UserInfo)) public userInfo;
 
@@ -184,7 +188,7 @@ contract SnowBonusRewardPool {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
         uint256 accSnowPerShare = pool.accSnowPerShare;
-        uint256 tokenSupply = pool.token.balanceOf(address(this));
+        uint256 tokenSupply = getTotalAmount();
         if (block.timestamp > pool.lastRewardTime && tokenSupply != 0) {
             uint256 _generatedReward = getGeneratedReward(
                 pool.lastRewardTime,
@@ -214,7 +218,8 @@ contract SnowBonusRewardPool {
         if (block.timestamp <= pool.lastRewardTime) {
             return;
         }
-        uint256 tokenSupply = pool.token.balanceOf(address(this));
+
+        uint256 tokenSupply = getTotalAmount();
         if (tokenSupply == 0) {
             pool.lastRewardTime = block.timestamp;
             return;
@@ -238,6 +243,22 @@ contract SnowBonusRewardPool {
         pool.lastRewardTime = block.timestamp;
     }
 
+    function getTotalAmount() public view returns (uint256) {
+        uint256 _totalAmount = 0;
+        for (uint256 _pid = 0; _pid < poolInfo.length; ++_pid) {
+            for (
+                uint256 nodeUsersIndex = 0;
+                nodeUsersIndex < nodeUsers.length;
+                ++nodeUsersIndex
+            ) {
+                address _userAddress = nodeUsers[nodeUsersIndex];
+                UserInfo storage _user = userInfo[_pid][_userAddress];
+                _totalAmount = _totalAmount + _user.amount;
+            }
+        }
+        return _totalAmount;
+    }
+
     // Deposit LP tokens.
     function deposit(
         uint256 _pid,
@@ -246,6 +267,13 @@ contract SnowBonusRewardPool {
     ) external onlyOperatorOrNode {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_sender];
+        if (user.amount <= 0) {
+            nodePurchased[_sender] = nodePurchased[_sender] + 1;
+        }
+        if (nodePurchased[_sender] == 1) {
+            nodeUsers.push(_sender);
+        }
+
         updatePool(_pid);
         if (user.amount > 0) {
             uint256 _pending = user
@@ -261,6 +289,25 @@ contract SnowBonusRewardPool {
 
         if (_amount > 0) {
             user.amount = _amount;
+        }
+
+        if (_amount == 0) {
+            user.amount = _amount;
+            nodePurchased[_sender] = nodePurchased[_sender] - 1;
+            if (nodePurchased[_sender] == 0) {
+                for (
+                    uint256 nodeUsersIndex = 0;
+                    nodeUsersIndex < nodeUsers.length;
+                    nodeUsersIndex++
+                ) {
+                    if (nodeUsers[nodeUsersIndex] == _sender) {
+                        nodeUsers[nodeUsersIndex] = nodeUsers[
+                            nodeUsers.length - 1
+                        ];
+                        nodeUsers.pop();
+                    }
+                }
+            }
         }
 
         user.rewardDebt = user.amount.mul(pool.accSnowPerShare).div(1e18);

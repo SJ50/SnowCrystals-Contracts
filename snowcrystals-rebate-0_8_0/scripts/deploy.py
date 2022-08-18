@@ -20,18 +20,11 @@ import os
 
 KEPT_BALANCE = 100 * 10**18
 
-if network.show_active() in NON_FORKED_LOCAL_BLOCKCHAIN_ENVIRONMENTS:
-    mmf_router_address = "0x145677FC4d9b8F19B5D56d1820c48e0443049a30"
-    mmf_factory_address = "0xd590cC180601AEcD6eeADD9B7f2B7611519544f4"
-else:
-    mmf_router_address = "0xc4e4DdB7a71fCF9Bb7356461Ca75124aA9910653"  ## cronos testnet
-    mmf_factory_address = (
-        "0xBa5FBa5A47f7711C3bF4ca035224c95B3cE2E9C9"  ## cronos testnet
-    )
-
-peg_token = "0xc21223249CA28397B4B6541dfFaEcC539BfF0c59"  # USDC
-
+router_address = config["networks"][network.show_active()]["router_address"]
+factory_address = config["networks"][network.show_active()]["factory_address"]
+peg_token = config["networks"][network.show_active()]["usdc_token"]  # USDC
 publish_source = config["networks"][network.show_active()]["varify"]
+
 
 # use datetime to deploy at specific time.
 # start_time = datetime.datetime(2022, 8, 1, 0, 0).timestamp()

@@ -13,7 +13,7 @@ compiler:
 dotenv: .env
 
 networks:
-  default: "ganache-cli"
+  default: "cronos-test"
   kovan:
     weth_token: "0xd0A1E359811322d97991E03f863a0C30C2cF029C"
     fau_token: "0xFab46E002BbF0b4509813474841E0716E6730136"
@@ -47,8 +47,17 @@ networks:
     lending_pool_addresses_provider: ""
     varify: False
   cronos-test:
+    router_address: "0xc4e4DdB7a71fCF9Bb7356461Ca75124aA9910653"
+    factory_address: "0xBa5FBa5A47f7711C3bF4ca035224c95B3cE2E9C9"
     weth_token: "0x6a3173618859C7cd40fAF6921b5E9eB6A76f1fD4"
+    usdc_token: "0x39D8fa99c9964D456b9fbD5e059e63442F314121"
     varify: False
+  cronos:
+    router_address: "0x145677FC4d9b8F19B5D56d1820c48e0443049a30"
+    factory_address: "0xd590cC180601AEcD6eeADD9B7f2B7611519544f4"
+    wcro_token: "0x5C7F8A570d578ED84E63fdFA7b1eE72dEae1AE23"
+    usdc_token: "0xc21223249CA28397B4B6541dfFaEcC539BfF0c59"
+    varify: True   
   development:
     weth_token: ""
     varify: False
@@ -56,6 +65,9 @@ networks:
     weth_token: ""
     varify: False
   ganache-cli:
+    router_address: "0x145677FC4d9b8F19B5D56d1820c48e0443049a30"
+    factory_address: "0xd590cC180601AEcD6eeADD9B7f2B7611519544f4"
+    wcro_token: "0x5C7F8A570d578ED84E63fdFA7b1eE72dEae1AE23"
     varify: False
     gas_fee: 10000000000000000
 

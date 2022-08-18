@@ -317,14 +317,17 @@ contract MainTokenNode {
 
     function _claimBonus() internal {
         address _sender = msg.sender;
-        uint256 totalClaims = users[_sender].total_claims;
-        uint256 maxPay = maxPayout(_sender);
-        uint256 pendingClaims = maxPay.sub(totalClaims);
-        IBonusRewards(bonusreward).deposit(
-            0,
-            pendingClaims.div(maxReturnPercent).mul(100),
-            _sender
-        );
+        uint256 _totalClaims = users[_sender].total_claims;
+        uint256 _maxPay = maxPayout(_sender);
+        uint256 _depositAmount = 0;
+        if (_totalClaims >= _maxPay) {
+            _depositAmount = 0;
+        } else {
+            uint256 _pendingClaims = _maxPay.sub(_totalClaims);
+            _depositAmount = _pendingClaims.div(maxReturnPercent).mul(100);
+        }
+        uint256 _pid = 0;
+        IBonusRewards(bonusreward).deposit(_pid, _depositAmount, _sender);
     }
 
     function maxPayout(address _sender) public view returns (uint256) {

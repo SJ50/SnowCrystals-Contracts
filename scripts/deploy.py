@@ -47,18 +47,12 @@ import os
 KEPT_BALANCE = 100 * 10**18
 gas_strategy = GasNowStrategy("fast")
 
-if network.show_active() in NON_FORKED_LOCAL_BLOCKCHAIN_ENVIRONMENTS:
-    mmf_router_address = "0x145677FC4d9b8F19B5D56d1820c48e0443049a30"
-    mmf_factory_address = "0xd590cC180601AEcD6eeADD9B7f2B7611519544f4"
-else:
-    mmf_router_address = "0xc4e4DdB7a71fCF9Bb7356461Ca75124aA9910653"  ## cronos testnet
-    mmf_factory_address = (
-        "0xBa5FBa5A47f7711C3bF4ca035224c95B3cE2E9C9"  ## cronos testnet
-    )
-peg_token = "0xc21223249CA28397B4B6541dfFaEcC539BfF0c59"  # USDC
 
-
+router_address = config["networks"][network.show_active()]["router_address"]
+factory_address = config["networks"][network.show_active()]["factory_address"]
+peg_token = config["networks"][network.show_active()]["usdc_token"]  # USDC
 publish_source = config["networks"][network.show_active()]["varify"]
+
 maintoken = Snow
 maintoken_name = "snowcrystals.finance"
 maintoken_symbol = "SNOW"
@@ -71,9 +65,9 @@ sharetoken_symbol = "GLCR"
 # use datetime to deploy at specific time.
 # start_time = datetime.datetime(2022, 8, 1, 0, 0).timestamp()
 start_time = (
-    time.time() + 180
+    time.time() + 600
 )  # deploy now // sharetoken, oracle - 1day, share_token_reward(chef), node + 7 days, genesis_pool - 12 hr, treasury
-boardroom_start_time = time.time() + 180
+boardroom_start_time = time.time() + 600
 oracle_period = 21600  # 6 hours
 
 
@@ -121,22 +115,6 @@ def deploy_maintoken():
     main_token = maintoken[-1]
     os.environ["MAIN_TOKEN"] = main_token.address
     return main_token
-
-
-# def deploy_maintoken():
-#     if len(maintoken) <= 0:
-#         print("deploying maintoken!")
-#         main_token = maintoken.deploy(
-#             maintoken_name,
-#             maintoken_symbol,
-#             airdrop_account,
-#             {"from": deployer_account},
-#             publish_source=publish_source,
-#         )
-#         append_new_line(".env", "export MAIN_TOKEN=" + main_token.address)
-#     main_token = maintoken[-1]
-#     os.environ["MAIN_TOKEN"] = main_token.address
-#     return main_token
 
 
 def deploy_bondtoken():
@@ -191,7 +169,7 @@ def deploy_boardroom():
 
 def create_pair(tokenA, tokenB):
     mmf_factory_abi = get_abi("mmf_factory_abi.json")
-    mmf_factory = Contract.from_abi("mmf_factory", mmf_factory_address, mmf_factory_abi)
+    mmf_factory = Contract.from_abi("mmf_factory", factory_address, mmf_factory_abi)
 
     get_pair_tx = mmf_factory.getPair(tokenA, tokenB, {"from": deployer_account})
     if get_pair_tx != "0x0000000000000000000000000000000000000000":
@@ -215,7 +193,7 @@ def create_liquidity_pool(
 ):
 
     mmf_router_abi = get_abi("mmf_router_abi.json")
-    mmf_router = Contract.from_abi("mmf_router", mmf_router_address, mmf_router_abi)
+    mmf_router = Contract.from_abi("mmf_router", router_address, mmf_router_abi)
     if main_token_lp:
         tokenA = os.environ.get("PEG_TOKEN")
         tokenB = os.environ.get("MAIN_TOKEN")
@@ -299,8 +277,8 @@ def deploy_share_token_lp():
     )
 
 
-def deploy_main_token_oracle_contract():
-    if len(Oracle) <= 2:
+def deploy_oracle_contract():
+    if len(Oracle) <= 0:
         main_token_lp = os.environ.get("MAIN_TOKEN_LP")
         print("deploying oracle!")
         main_token_oracle = Oracle.deploy(
@@ -350,7 +328,7 @@ def deploy_share_token_reward_pool():
 
 
 def deploy_bonus_reward_pool():
-    if len(SnowBonusRewardPool) <= 0:
+    if len(SnowBonusRewardPool) <= 2:
         print("deploying bonus reward pool!")
         main_token = os.environ.get("MAIN_TOKEN")
         pool_start_time = start_time
@@ -610,7 +588,7 @@ def deploy_liquidity_fund():
             sbond_bonus_reward_pool,
             node_bonus_reward_pool,
             treasury,
-            mmf_router_address,
+            router_address,
             {"from": deployer_account},
             publish_source=publish_source,
         )
@@ -632,7 +610,7 @@ def main():
     deploy_share_token_lp()
     deploy_boardroom()
     deploy_treasury_contract()
-    deploy_main_token_oracle_contract()
+    deploy_oracle_contract()
     deploy_share_token_reward_pool()
     deploy_bonus_reward_pool()
     deploy_main_token_node()
