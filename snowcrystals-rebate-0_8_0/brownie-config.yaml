@@ -68,6 +68,7 @@ networks:
     wcro_token: "0x5C7F8A570d578ED84E63fdFA7b1eE72dEae1AE23"
     router_address: "0x145677FC4d9b8F19B5D56d1820c48e0443049a30"
     factory_address: "0xd590cC180601AEcD6eeADD9B7f2B7611519544f4"
+    usdc_token: ""
     varify: False
     gas_fee: 10000000000000000
 

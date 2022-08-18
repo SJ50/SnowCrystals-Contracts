@@ -168,15 +168,15 @@ def deploy_boardroom():
 
 
 def create_pair(tokenA, tokenB):
-    mmf_factory_abi = get_abi("mmf_factory_abi.json")
-    mmf_factory = Contract.from_abi("mmf_factory", factory_address, mmf_factory_abi)
+    factory_abi = get_abi("factory_abi.json")
+    factory = Contract.from_abi("factory", factory_address, factory_abi)
 
-    get_pair_tx = mmf_factory.getPair(tokenA, tokenB, {"from": deployer_account})
+    get_pair_tx = factory.getPair(tokenA, tokenB, {"from": deployer_account})
     if get_pair_tx != "0x0000000000000000000000000000000000000000":
         return get_pair_tx
 
     print("creating pair!")
-    create_pair_tx = mmf_factory.createPair(tokenA, tokenB, {"from": deployer_account})
+    create_pair_tx = factory.createPair(tokenA, tokenB, {"from": deployer_account})
     create_pair_tx.wait(1)
     return create_pair_tx
 
@@ -192,8 +192,8 @@ def create_liquidity_pool(
     share_token_lp=None,
 ):
 
-    mmf_router_abi = get_abi("mmf_router_abi.json")
-    mmf_router = Contract.from_abi("mmf_router", router_address, mmf_router_abi)
+    router_abi = get_abi("router_abi.json")
+    router = Contract.from_abi("router", router_address, router_abi)
     if main_token_lp:
         tokenA = os.environ.get("PEG_TOKEN")
         tokenB = os.environ.get("MAIN_TOKEN")
@@ -206,13 +206,13 @@ def create_liquidity_pool(
     print("approving tokenA...")
     tokenA_contract = Contract(tokenA)
     tx_approve_tokenA = tokenA_contract.approve(
-        mmf_router.address, amountADesired, {"from": deployer_account}
+        router.address, amountADesired, {"from": deployer_account}
     )
     tx_approve_tokenA.wait(1)
     print("approving tokenB...")
     tokenB_contract = Contract(tokenB)
     tx_approve_tokenB = tokenB_contract.approve(
-        mmf_router.address, amountBDesired, {"from": deployer_account}
+        router.address, amountBDesired, {"from": deployer_account}
     )
     tx_approve_tokenB.wait(1)
 
@@ -220,7 +220,7 @@ def create_liquidity_pool(
     block = web3.eth.getBlock(blockNumber)
     timestamp = block.timestamp + 300
     print("adding liquidity pool...")
-    add_liquidity_tx = mmf_router.addLiquidity(
+    add_liquidity_tx = router.addLiquidity(
         tokenA,
         tokenB,
         amountADesired,
@@ -280,11 +280,13 @@ def deploy_share_token_lp():
 def deploy_oracle_contract():
     if len(Oracle) <= 0:
         main_token_lp = os.environ.get("MAIN_TOKEN_LP")
+        main_token = os.environ.get("MAIN_TOKEN")
         print("deploying oracle!")
         main_token_oracle = Oracle.deploy(
             main_token_lp,
             oracle_period,
             start_time,
+            main_token,
             {"from": deployer_account},
             publish_source=publish_source,
         )
@@ -328,7 +330,7 @@ def deploy_share_token_reward_pool():
 
 
 def deploy_bonus_reward_pool():
-    if len(SnowBonusRewardPool) <= 2:
+    if len(SnowBonusRewardPool) <= 0:
         print("deploying bonus reward pool!")
         main_token = os.environ.get("MAIN_TOKEN")
         pool_start_time = start_time

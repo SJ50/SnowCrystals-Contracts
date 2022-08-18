@@ -295,7 +295,7 @@ def setup_boardroom():
     stake_tx.wait(1)
 
 
-def setup_maintoken_oracle():
+def setup_oracle():
     oracle_contract = Contract(oracle)
     print("Updating Oracle...")
     update_tx = oracle_contract.update({"from": deployer_account})
@@ -400,7 +400,7 @@ def get_all_info():
 
 def main():
     setup_main_token()
-    setup_maintoken_oracle()
+    setup_oracle()
     setup_bond_token()
     setup_share_token()
     setup_boardroom()

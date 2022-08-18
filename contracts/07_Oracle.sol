@@ -15,9 +15,11 @@ import "../interfaces/lib/IUniswapV2Pair.sol";
 contract Oracle is Epoch {
     using FixedPoint for *;
     using SafeMath for uint256;
+    using SafeMath for uint144;
 
     /* ========== STATE VARIABLES ========== */
-
+    address public dollar;
+    uint144 public constant DECIMALS_MULTIPLER = 10**12; // USDC Decimals = 6
     // uniswap
     address public token0;
     address public token1;
@@ -35,8 +37,10 @@ contract Oracle is Epoch {
     constructor(
         IUniswapV2Pair _pair,
         uint256 _period,
-        uint256 _startTime
+        uint256 _startTime,
+        address _dollar
     ) public Epoch(_period, _startTime, 0) {
+        dollar = address(_dollar);
         pair = _pair;
         token0 = pair.token0();
         token1 = pair.token1();
@@ -87,10 +91,13 @@ contract Oracle is Epoch {
         returns (uint144 amountOut)
     {
         if (_token == token0) {
-            amountOut = price0Average.mul(_amountIn.mul(1e12)).decode144();
+            amountOut = price0Average.mul(_amountIn).decode144();
         } else {
             require(_token == token1, "Oracle: INVALID_TOKEN");
-            amountOut = price1Average.mul(_amountIn.div(1e12)).decode144();
+            amountOut = price1Average.mul(_amountIn).decode144();
+        }
+        if (_token == dollar) {
+            amountOut = uint144(amountOut.mul(DECIMALS_MULTIPLER));
         }
     }
 
@@ -112,7 +119,7 @@ contract Oracle is Epoch {
                         (price0Cumulative - price0CumulativeLast) / timeElapsed
                     )
                 )
-                .mul(_amountIn.mul(1e12))
+                .mul(_amountIn)
                 .decode144();
         } else if (_token == token1) {
             _amountOut = FixedPoint
@@ -121,8 +128,11 @@ contract Oracle is Epoch {
                         (price1Cumulative - price1CumulativeLast) / timeElapsed
                     )
                 )
-                .mul(_amountIn.div(1e12))
+                .mul(_amountIn)
                 .decode144();
+        }
+        if (_token == dollar) {
+            _amountOut = uint144(_amountOut.mul(DECIMALS_MULTIPLER));
         }
     }
 
