@@ -3,7 +3,6 @@
 pragma solidity ^0.6.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
@@ -21,7 +20,6 @@ import "../interfaces/ILiquidityFund.sol";
 contract Snow is ERC20, ERC20Burnable, Operator {
     using SafeMath for uint256;
     using SafeMath8 for uint8;
-    using SafeERC20 for IERC20;
 
     /* ========== STATE VARIABLES ========== */
     // Initial distribution for the first 48h genesis pools
@@ -354,7 +352,7 @@ contract Snow is ERC20, ERC20Burnable, Operator {
         _beforeTokenTransfer(sender, recipient, _amount);
 
         if (!_isExcludedFromFee[sender] && !_isExcludedToFee[recipient]) {
-            uint256 _tokenPrice = getTokenPrice();
+            uint256 _tokenPrice = getTokenUpdatedPrice();
 
             uint256 _taxRate = _getTaxRate(_tokenPrice);
             if (_taxRate > 0) {

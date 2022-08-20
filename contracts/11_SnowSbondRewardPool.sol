@@ -90,12 +90,30 @@ contract SnowSbondRewardPool {
         _;
     }
 
-    function restartPool(uint256 _amount) external onlyOperator {
+    function restartPool(uint256 _amount, uint256 _nextEpochPoint)
+        external
+        onlyOperator
+    {
         require(block.timestamp > poolEndTime, "last reward pool running");
+
         TOTAL_REWARDS = _amount;
-        snowPerSecond = TOTAL_REWARDS.div(runningTime);
         poolStartTime = block.timestamp;
-        poolEndTime = poolStartTime + runningTime;
+        poolEndTime = _nextEpochPoint;
+        uint256 _runningTime = _nextEpochPoint.sub(block.timestamp);
+        snowPerSecond = TOTAL_REWARDS.div(_runningTime);
+        massUpdatePools();
+    }
+
+    function manuallyRestartPool(uint256 _amount, uint256 _secondToEndTime)
+        external
+        onlyOperator
+    {
+        require(block.timestamp > poolEndTime, "last reward pool running");
+
+        TOTAL_REWARDS = _amount;
+        poolStartTime = block.timestamp;
+        poolEndTime = poolStartTime.add(_secondToEndTime);
+        snowPerSecond = TOTAL_REWARDS.div(_secondToEndTime);
         massUpdatePools();
     }
 

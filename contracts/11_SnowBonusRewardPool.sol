@@ -14,6 +14,7 @@ contract SnowBonusRewardPool {
     // governance
     address public operator;
     address public node;
+    address public liqudityFund;
 
     // Info of each user.
     struct UserInfo {
@@ -89,12 +90,43 @@ contract SnowBonusRewardPool {
         _;
     }
 
-    function restartPool(uint256 _amount) external onlyOperatorOrNode {
+    modifier onlyOperator() {
+        require(msg.sender == operator, "caller is not the operator");
+        _;
+    }
+
+    modifier onlyOperatorOrLiqudityFund() {
+        require(
+            operator == msg.sender || liqudityFund == msg.sender,
+            "caller is not the operator or the LiqudityFund"
+        );
+        _;
+    }
+
+    function restartPool(uint256 _amount, uint256 _nextEpochPoint)
+        external
+        onlyOperatorOrLiqudityFund
+    {
         require(block.timestamp > poolEndTime, "last reward pool running");
+
         TOTAL_REWARDS = _amount;
-        snowPerSecond = TOTAL_REWARDS.div(runningTime);
         poolStartTime = block.timestamp;
-        poolEndTime = poolStartTime + runningTime;
+        poolEndTime = _nextEpochPoint;
+        uint256 _runningTime = poolEndTime.sub(poolStartTime);
+        snowPerSecond = TOTAL_REWARDS.div(_runningTime);
+        massUpdatePools();
+    }
+
+    function manuallyRestartPool(uint256 _amount, uint256 _secondToEndTime)
+        external
+        onlyOperator
+    {
+        require(block.timestamp > poolEndTime, "last reward pool running");
+
+        TOTAL_REWARDS = _amount;
+        poolStartTime = block.timestamp;
+        poolEndTime = poolStartTime.add(_secondToEndTime);
+        snowPerSecond = TOTAL_REWARDS.div(_secondToEndTime);
         massUpdatePools();
     }
 
@@ -188,7 +220,7 @@ contract SnowBonusRewardPool {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
         uint256 accSnowPerShare = pool.accSnowPerShare;
-        uint256 tokenSupply = getTotalAmount();
+        uint256 tokenSupply = getTotalDepositAmount();
         if (block.timestamp > pool.lastRewardTime && tokenSupply != 0) {
             uint256 _generatedReward = getGeneratedReward(
                 pool.lastRewardTime,
@@ -219,7 +251,7 @@ contract SnowBonusRewardPool {
             return;
         }
 
-        uint256 tokenSupply = getTotalAmount();
+        uint256 tokenSupply = getTotalDepositAmount();
         if (tokenSupply == 0) {
             pool.lastRewardTime = block.timestamp;
             return;
@@ -243,7 +275,7 @@ contract SnowBonusRewardPool {
         pool.lastRewardTime = block.timestamp;
     }
 
-    function getTotalAmount() public view returns (uint256) {
+    function getTotalDepositAmount() public view returns (uint256) {
         uint256 _totalAmount = 0;
         for (uint256 _pid = 0; _pid < poolInfo.length; ++_pid) {
             for (
@@ -332,6 +364,13 @@ contract SnowBonusRewardPool {
 
     function setNode(address _node) external onlyOperatorOrNode {
         node = _node;
+    }
+
+    function setLiqudityFund(address _liqudityFund)
+        external
+        onlyOperatorOrNode
+    {
+        liqudityFund = _liqudityFund;
     }
 
     function governanceRecoverUnsupported(

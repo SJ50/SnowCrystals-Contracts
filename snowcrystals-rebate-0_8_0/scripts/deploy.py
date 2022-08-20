@@ -47,16 +47,14 @@ else:
     airdrop_account = get_account(id="snowcrystals-airdrop")
     insurance_fund = get_account(id="snowcrystals-airdrop")
 
-
-wcro = "0x5C7F8A570d578ED84E63fdFA7b1eE72dEae1AE23"
-usdc = os.environ.get("PEG_TOKEN")
+peg_token = os.environ.get("PEG_TOKEN")
 
 
 def deploy_zap():
-    if len(Zap) <= 0:
+    if len(Zap) <= 2:
         print("deploying Zap...")
         zap = Zap.deploy(
-            usdc,
+            peg_token,
             {"from": deployer_account},
             publish_source=publish_source,
         )

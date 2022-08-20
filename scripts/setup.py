@@ -128,6 +128,12 @@ def setup_main_token():
     )
     set_oracle_tx.wait(1)
 
+    print("Maintoken enabling addliquidity...")
+    enable_add_liquidity_tx = main_token_contract.toggleAddLiquidityEnabled(
+        {"from": deployer_account},
+    )
+    enable_add_liquidity_tx.wait(1)
+
     print("Maintoken exclude maintokenLP from tax to make buying token tax free...")
     set_lp_exclude_from_fee_tx = main_token_contract.setExcludeFromFee(
         main_token_lp,
@@ -364,6 +370,21 @@ def setup_node_bonus_reward_pool():
         main_token_node, {"from": deployer_account}
     )
     node_bonus_reward_pool_set_node_tx.wait(1)
+    node_bonus_reward_pool_set_liqudity_fund_tx = (
+        node_bonus_reward_pool_contract.setLiqudityFund(
+            liquidity_fund, {"from": deployer_account}
+        )
+    )
+    node_bonus_reward_pool_set_liqudity_fund_tx.wait(1)
+
+
+def setup_zap():
+    zap_abi = get_abi("zap_abi.json")
+    zap_contract = Contract.from_abi("zap", zap, zap_abi)
+    zap_setIsFeeOnTransfer_tx = zap_contract.setIsFeeOnTransfer(
+        main_token, {"from": deployer_account}
+    )
+    zap_setIsFeeOnTransfer_tx.wait(1)
 
 
 def get_all_info():

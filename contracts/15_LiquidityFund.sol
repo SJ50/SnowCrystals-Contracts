@@ -16,6 +16,8 @@ import "../interfaces/IUniswapV2Router.sol";
 import "../interfaces/lib/IUniswapV2Pair.sol";
 import "../interfaces/IUniswapV2Factory.sol";
 
+import "../interfaces/IBonusRewards.sol";
+
 /*
     https://snowcrystals.finance
 */
@@ -211,20 +213,42 @@ contract LiquidityFund is ContractGuard {
         }
     }
 
-    function sendToBonus(uint256 _price, uint256 _ceilingPrice)
-        public
-        onlyOperatorOrTreasury
-    {
+    function sendToBonus(
+        uint256 _price,
+        uint256 _ceilingPrice,
+        uint256 _nextEpochPoint
+    ) public onlyOperatorOrTreasury {
         if (_price < _ceilingPrice) {
             uint256 half = bonusBalance.div(2);
             uint256 otherHalf = bonusBalance.sub(half);
 
             IERC20(mainToken).transfer(sBondBonusReward, half);
             IERC20(mainToken).transfer(nodeBonusReward, otherHalf);
+
+            _restartBonusRewardPool(half, sBondBonusReward, _nextEpochPoint);
+            _restartBonusRewardPool(
+                otherHalf,
+                nodeBonusReward,
+                _nextEpochPoint
+            );
         } else {
             IERC20(mainToken).transfer(nodeBonusReward, bonusBalance);
+
+            _restartBonusRewardPool(
+                bonusBalance,
+                nodeBonusReward,
+                _nextEpochPoint
+            );
         }
         bonusBalance = 0;
+    }
+
+    function _restartBonusRewardPool(
+        uint256 _amount,
+        address _rewardPool,
+        uint256 _nextEpochPoint
+    ) private {
+        IBonusRewards(_rewardPool).restartPool(_amount, _nextEpochPoint);
     }
 
     function setRouterAddress(address newRouter) public onlyOperator {
@@ -268,6 +292,14 @@ contract LiquidityFund is ContractGuard {
         onlyOperator
     {
         nodeBonusReward = _nodeBonusReward;
+    }
+
+    function setBonusBalance(uint256 _amount) external onlyOperator {
+        bonusBalance = _amount;
+    }
+
+    function setLiquidityBalance(uint256 _amount) external onlyOperator {
+        liquidityBalance = _amount;
     }
 
     function governanceRecoverUnsupported(

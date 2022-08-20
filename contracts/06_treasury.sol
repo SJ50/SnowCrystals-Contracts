@@ -771,7 +771,8 @@ contract Treasury is ContractGuard {
         }
         ILiquidityFund(liquidityFund).sendToBonus(
             previousEpochSnowPrice,
-            snowPriceCeiling
+            snowPriceCeiling,
+            nextEpochPoint()
         );
     }
 

@@ -16,4 +16,6 @@ interface IBonusRewards {
         bool _withUpdate,
         uint256 _lastRewardTime
     ) external;
+
+    function restartPool(uint256 _amount, uint256 _nextEpochPoint) external;
 }
