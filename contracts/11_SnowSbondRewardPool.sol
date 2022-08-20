@@ -15,6 +15,8 @@ contract SnowSbondRewardPool {
     address public operator;
     address public daoFund;
     uint256 public depositFee;
+    address public glcrRewardPool;
+    address public liqudityFund;
 
     // Info of each user.
     struct UserInfo {
@@ -82,17 +84,33 @@ contract SnowSbondRewardPool {
         add(1, depositToken, false, 0);
     }
 
+    modifier onlyOperatorOrGlcrRewardPool() {
+        require(
+            operator == msg.sender || glcrRewardPool == msg.sender,
+            "caller is not the operator or the node"
+        );
+        _;
+    }
+
     modifier onlyOperator() {
         require(
             operator == msg.sender,
-            "SnowGenesisPool: caller is not the operator"
+            "SnowSbondReward: caller is not the operator"
+        );
+        _;
+    }
+
+    modifier onlyOperatorOrLiqudityFund() {
+        require(
+            operator == msg.sender || liqudityFund == msg.sender,
+            "caller is not the operator or the LiqudityFund"
         );
         _;
     }
 
     function restartPool(uint256 _amount, uint256 _nextEpochPoint)
         external
-        onlyOperator
+        onlyOperatorOrLiqudityFund
     {
         require(block.timestamp > poolEndTime, "last reward pool running");
 
@@ -108,8 +126,6 @@ contract SnowSbondRewardPool {
         external
         onlyOperator
     {
-        require(block.timestamp > poolEndTime, "last reward pool running");
-
         TOTAL_REWARDS = _amount;
         poolStartTime = block.timestamp;
         poolEndTime = poolStartTime.add(_secondToEndTime);
@@ -122,7 +138,7 @@ contract SnowSbondRewardPool {
         for (uint256 pid = 0; pid < length; ++pid) {
             require(
                 poolInfo[pid].token != _token,
-                "SnowGenesisPool: existing pool?"
+                "SnowSbondReward: existing pool?"
             );
         }
     }
@@ -349,6 +365,14 @@ contract SnowSbondRewardPool {
 
     function setOperator(address _operator) external onlyOperator {
         operator = _operator;
+    }
+
+    function setGlcrRewardPool(address _glcrRewardPool) external onlyOperator {
+        glcrRewardPool = _glcrRewardPool;
+    }
+
+    function setLiqudityFund(address _liqudityFund) external onlyOperator {
+        liqudityFund = _liqudityFund;
     }
 
     function governanceRecoverUnsupported(

@@ -121,8 +121,6 @@ contract SnowBonusRewardPool {
         external
         onlyOperator
     {
-        require(block.timestamp > poolEndTime, "last reward pool running");
-
         TOTAL_REWARDS = _amount;
         poolStartTime = block.timestamp;
         poolEndTime = poolStartTime.add(_secondToEndTime);
@@ -143,7 +141,7 @@ contract SnowBonusRewardPool {
         IERC20 _token,
         bool _withUpdate,
         uint256 _lastRewardTime
-    ) public onlyOperatorOrNode {
+    ) public onlyOperator {
         checkPoolDuplicate(_token);
         if (_withUpdate) {
             massUpdatePools();
@@ -180,7 +178,7 @@ contract SnowBonusRewardPool {
     }
 
     // Update the given pool's SNOW allocation point. Can only be called by the owner.
-    function set(uint256 _pid, uint256 _allocPoint) public onlyOperatorOrNode {
+    function set(uint256 _pid, uint256 _allocPoint) public onlyOperator {
         massUpdatePools();
         PoolInfo storage pool = poolInfo[_pid];
         if (pool.isStarted) {
@@ -358,18 +356,15 @@ contract SnowBonusRewardPool {
         }
     }
 
-    function setOperator(address _operator) external onlyOperatorOrNode {
+    function setOperator(address _operator) external onlyOperator {
         operator = _operator;
     }
 
-    function setNode(address _node) external onlyOperatorOrNode {
+    function setNode(address _node) external onlyOperator {
         node = _node;
     }
 
-    function setLiqudityFund(address _liqudityFund)
-        external
-        onlyOperatorOrNode
-    {
+    function setLiqudityFund(address _liqudityFund) external onlyOperator {
         liqudityFund = _liqudityFund;
     }
 
@@ -377,7 +372,7 @@ contract SnowBonusRewardPool {
         IERC20 _token,
         uint256 amount,
         address to
-    ) external onlyOperatorOrNode {
+    ) external onlyOperator {
         if (block.timestamp < poolEndTime + 30 days) {
             // do not allow to drain core token (SNOW or lps) if less than 30 days after pool ends
             require(_token != snow, "snow");

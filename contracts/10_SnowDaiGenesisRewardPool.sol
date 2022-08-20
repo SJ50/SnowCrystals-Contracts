@@ -84,7 +84,7 @@ contract SnowDaiGenesisRewardPool {
     modifier onlyOperator() {
         require(
             operator == msg.sender,
-            "SnowGenesisPool: caller is not the operator"
+            "SnowDaiGenesis: caller is not the operator"
         );
         _;
     }
@@ -94,7 +94,7 @@ contract SnowDaiGenesisRewardPool {
         for (uint256 pid = 0; pid < length; ++pid) {
             require(
                 poolInfo[pid].token != _token,
-                "SnowGenesisPool: existing pool?"
+                "SnowDaiGenesis: existing pool?"
             );
         }
     }
