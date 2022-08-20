@@ -428,4 +428,5 @@ def main():
     setup_treasury()
     setup_share_reward_pool()
     setup_node_bonus_reward_pool()
+    setup_zap()
     get_all_info()
