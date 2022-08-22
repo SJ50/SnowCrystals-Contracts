@@ -87,7 +87,7 @@ contract SnowSbondRewardPool {
     modifier onlyOperatorOrGlcrRewardPool() {
         require(
             operator == msg.sender || glcrRewardPool == msg.sender,
-            "caller is not the operator or the node"
+            "SnowSbondReward: caller is not the operator or the node"
         );
         _;
     }
@@ -103,7 +103,7 @@ contract SnowSbondRewardPool {
     modifier onlyOperatorOrLiqudityFund() {
         require(
             operator == msg.sender || liqudityFund == msg.sender,
-            "caller is not the operator or the LiqudityFund"
+            "SnowSbondReward: caller is not the operator or the LiqudityFund"
         );
         _;
     }
@@ -112,12 +112,21 @@ contract SnowSbondRewardPool {
         external
         onlyOperatorOrLiqudityFund
     {
-        require(block.timestamp > poolEndTime, "last reward pool running");
+        require(
+            block.timestamp > poolEndTime,
+            "SnowSbondReward: last reward pool running"
+        );
 
         TOTAL_REWARDS = _amount;
+
         poolStartTime = block.timestamp;
         poolEndTime = _nextEpochPoint;
-        uint256 _runningTime = _nextEpochPoint.sub(block.timestamp);
+        if (block.timestamp > _nextEpochPoint) {
+            poolStartTime = poolEndTime;
+            snowPerSecond = 0;
+            return;
+        }
+        uint256 _runningTime = poolEndTime.sub(poolStartTime);
         snowPerSecond = TOTAL_REWARDS.div(_runningTime);
         massUpdatePools();
     }
@@ -128,6 +137,11 @@ contract SnowSbondRewardPool {
     {
         TOTAL_REWARDS = _amount;
         poolStartTime = block.timestamp;
+        if (_secondToEndTime == 0) {
+            poolEndTime = poolStartTime;
+            snowPerSecond = 0;
+            return;
+        }
         poolEndTime = poolStartTime.add(_secondToEndTime);
         snowPerSecond = TOTAL_REWARDS.div(_secondToEndTime);
         massUpdatePools();

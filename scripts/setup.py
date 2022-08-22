@@ -378,6 +378,22 @@ def setup_node_bonus_reward_pool():
     node_bonus_reward_pool_set_liqudity_fund_tx.wait(1)
 
 
+def setup_sbond_bonus_reward_pool():
+    sbond_bonus_reward_pool_contract = Contract(sbond_reward_pool)
+    sbond_bonus_reward_pool_set_share_token_reward_pool_tx = (
+        sbond_bonus_reward_pool_contract.setGlcrRewardPool(
+            share_reward_pool, {"from": deployer_account}
+        )
+    )
+    sbond_bonus_reward_pool_set_share_token_reward_pool_tx.wait(1)
+    sbond_bonus_reward_pool_set_liqudity_fund_tx = (
+        sbond_bonus_reward_pool_contract.setLiqudityFund(
+            liquidity_fund, {"from": deployer_account}
+        )
+    )
+    sbond_bonus_reward_pool_set_liqudity_fund_tx.wait(1)
+
+
 def setup_zap():
     zap_abi = get_abi("zap_abi.json")
     zap_contract = Contract.from_abi("zap", zap, zap_abi)
@@ -399,7 +415,7 @@ def get_all_info():
     print(f"MAIN TOKEN LIQUIDITY POOL contract is {main_token_lp}")
     print(f"SHARE TOKEN LIQUIDITY POOL contract is {share_token_lp}")
     print(f"SHARE TOKEN REWARD contract is {share_reward_pool}")
-    print(f"BONUS REWARD POOL contract is {node_bonus_reward_pool}")
+    print(f"NODE BONUS REWARD POOL contract is {node_bonus_reward_pool}")
     print(f"MAIN TOKEN NODE contract is {main_token_node}")
     print(f"SHARE TOKEN NODE contract is {share_token_node}")
     print(f"SNOW-USDC-LP GENESIS POOl contract is {snowusdclp_genesis_pool}")

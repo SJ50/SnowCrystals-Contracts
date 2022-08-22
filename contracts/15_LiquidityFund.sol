@@ -218,6 +218,9 @@ contract LiquidityFund is ContractGuard {
         uint256 _ceilingPrice,
         uint256 _nextEpochPoint
     ) public onlyOperatorOrTreasury {
+        if (block.timestamp > _nextEpochPoint) {
+            return;
+        }
         if (_price < _ceilingPrice) {
             uint256 half = bonusBalance.div(2);
             uint256 otherHalf = bonusBalance.sub(half);

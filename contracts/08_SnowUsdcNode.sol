@@ -146,6 +146,10 @@ contract MainTokenNode {
         }
     }
 
+    function setBonusReward(address _bonusreward) external onlyDev {
+        bonusreward = _bonusreward;
+    }
+
     function totalAllocPoints() public view returns (uint256) {
         uint256 total = 0;
         for (uint256 i = 0; i < tierAllocPoints.length; i++) {

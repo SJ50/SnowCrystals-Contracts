@@ -112,6 +112,11 @@ contract SnowBonusRewardPool {
         TOTAL_REWARDS = _amount;
         poolStartTime = block.timestamp;
         poolEndTime = _nextEpochPoint;
+        if (block.timestamp > _nextEpochPoint) {
+            poolStartTime = poolEndTime;
+            snowPerSecond = 0;
+            return;
+        }
         uint256 _runningTime = poolEndTime.sub(poolStartTime);
         snowPerSecond = TOTAL_REWARDS.div(_runningTime);
         massUpdatePools();
@@ -123,7 +128,12 @@ contract SnowBonusRewardPool {
     {
         TOTAL_REWARDS = _amount;
         poolStartTime = block.timestamp;
-        poolEndTime = poolStartTime.add(_secondToEndTime);
+        if (_secondToEndTime == 0) {
+            poolEndTime = block.timestamp;
+            snowPerSecond = 0;
+            return;
+        }
+        poolEndTime = block.timestamp.add(_secondToEndTime);
         snowPerSecond = TOTAL_REWARDS.div(_secondToEndTime);
         massUpdatePools();
     }
