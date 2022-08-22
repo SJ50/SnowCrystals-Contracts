@@ -42,8 +42,8 @@ contract LiquidityFund is ContractGuard {
     address public pegToken;
     address public mainToken;
 
-    address public sBondBonusReward;
-    address public nodeBonusReward;
+    address public sBondBonusRewardPool;
+    address public nodeBonusRewardPool;
 
     address public treasury;
 
@@ -56,8 +56,8 @@ contract LiquidityFund is ContractGuard {
         address _devWallet,
         address _pegToken,
         address _mainToken,
-        address _sBondBonusReward,
-        address _nodeBonusReward,
+        address _sBondBonusRewardPool,
+        address _nodeBonusRewardPool,
         address _treasury,
         address _router
     ) public {
@@ -66,8 +66,8 @@ contract LiquidityFund is ContractGuard {
         pegToken = _pegToken;
         mainToken = _mainToken;
 
-        sBondBonusReward = _sBondBonusReward;
-        nodeBonusReward = _nodeBonusReward;
+        sBondBonusRewardPool = _sBondBonusRewardPool;
+        nodeBonusRewardPool = _nodeBonusRewardPool;
 
         treasury = _treasury;
 
@@ -225,21 +225,25 @@ contract LiquidityFund is ContractGuard {
             uint256 half = bonusBalance.div(2);
             uint256 otherHalf = bonusBalance.sub(half);
 
-            IERC20(mainToken).transfer(sBondBonusReward, half);
-            IERC20(mainToken).transfer(nodeBonusReward, otherHalf);
+            IERC20(mainToken).transfer(sBondBonusRewardPool, half);
+            IERC20(mainToken).transfer(nodeBonusRewardPool, otherHalf);
 
-            _restartBonusRewardPool(half, sBondBonusReward, _nextEpochPoint);
+            _restartBonusRewardPool(
+                half,
+                sBondBonusRewardPool,
+                _nextEpochPoint
+            );
             _restartBonusRewardPool(
                 otherHalf,
-                nodeBonusReward,
+                nodeBonusRewardPool,
                 _nextEpochPoint
             );
         } else {
-            IERC20(mainToken).transfer(nodeBonusReward, bonusBalance);
+            IERC20(mainToken).transfer(nodeBonusRewardPool, bonusBalance);
 
             _restartBonusRewardPool(
                 bonusBalance,
-                nodeBonusReward,
+                nodeBonusRewardPool,
                 _nextEpochPoint
             );
         }
@@ -283,18 +287,18 @@ contract LiquidityFund is ContractGuard {
         mainToken = _mainToken;
     }
 
-    function setBondBonusReward(address _sBondBonusReward)
+    function setBondBonusReward(address _sBondBonusRewardPool)
         external
         onlyOperator
     {
-        sBondBonusReward = _sBondBonusReward;
+        sBondBonusRewardPool = _sBondBonusRewardPool;
     }
 
-    function setNodeBonusReward(address _nodeBonusReward)
+    function setnodeBonusRewardPool(address _nodeBonusRewardPool)
         external
         onlyOperator
     {
-        nodeBonusReward = _nodeBonusReward;
+        nodeBonusRewardPool = _nodeBonusRewardPool;
     }
 
     function setBonusBalance(uint256 _amount) external onlyOperator {
@@ -310,6 +314,6 @@ contract LiquidityFund is ContractGuard {
         uint256 _amount,
         address _to
     ) external onlyOperator {
-        IERC20(_token).safeTransfer(_to, _amount);
+        IERC20(_token).Transfer(_to, _amount);
     }
 }

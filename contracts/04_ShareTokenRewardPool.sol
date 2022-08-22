@@ -388,7 +388,7 @@ contract ShareTokenRewardPool {
     }
 
     function governanceRecoverUnsupported(
-        IERC20 _token,
+        address _token,
         uint256 amount,
         address to
     ) external onlyOperator {
@@ -401,6 +401,6 @@ contract ShareTokenRewardPool {
                 require(_token != pool.token, "pool.token");
             }
         }
-        _token.safeTransfer(to, amount);
+        IERC20(_token).safeTransfer(to, amount);
     }
 }

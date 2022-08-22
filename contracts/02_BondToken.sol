@@ -66,10 +66,10 @@ contract SBond is ERC20Burnable, Operator {
     }
 
     function governanceRecoverUnsupported(
-        IERC20 _token,
+        address _token,
         uint256 _amount,
         address _to
     ) external onlyOperator {
-        _token.transfer(_to, _amount);
+        IERC20(_token).transfer(_to, _amount);
     }
 }

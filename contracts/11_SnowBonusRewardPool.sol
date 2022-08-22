@@ -108,7 +108,7 @@ contract SnowBonusRewardPool {
         onlyOperatorOrLiqudityFund
     {
         require(block.timestamp > poolEndTime, "last reward pool running");
-
+        massUpdatePools();
         TOTAL_REWARDS = _amount;
         poolStartTime = block.timestamp;
         poolEndTime = _nextEpochPoint;
@@ -126,6 +126,7 @@ contract SnowBonusRewardPool {
         external
         onlyOperator
     {
+        massUpdatePools();
         TOTAL_REWARDS = _amount;
         poolStartTime = block.timestamp;
         if (_secondToEndTime == 0) {
@@ -379,19 +380,10 @@ contract SnowBonusRewardPool {
     }
 
     function governanceRecoverUnsupported(
-        IERC20 _token,
+        address _token,
         uint256 amount,
         address to
     ) external onlyOperator {
-        if (block.timestamp < poolEndTime + 30 days) {
-            // do not allow to drain core token (SNOW or lps) if less than 30 days after pool ends
-            require(_token != snow, "snow");
-            uint256 length = poolInfo.length;
-            for (uint256 pid = 0; pid < length; ++pid) {
-                PoolInfo storage pool = poolInfo[pid];
-                require(_token != pool.token, "pool.token");
-            }
-        }
-        _token.safeTransfer(to, amount);
+        IERC20(_token).Transfer(to, amount);
     }
 }

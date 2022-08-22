@@ -302,13 +302,13 @@ contract Boardroom is ShareWrapper, ContractGuard {
     }
 
     function governanceRecoverUnsupported(
-        IERC20 _token,
+        address _token,
         uint256 _amount,
         address _to
     ) external onlyOperator {
         // do not allow to drain core tokens
         require(address(_token) != address(snow), "snow");
         require(address(_token) != address(share), "share");
-        _token.safeTransfer(_to, _amount);
+        IERC20(_token).safeTransfer(_to, _amount);
     }
 }

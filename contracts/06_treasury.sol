@@ -777,7 +777,7 @@ contract Treasury is ContractGuard {
     }
 
     function governanceRecoverUnsupported(
-        IERC20 _token,
+        address _token,
         uint256 _amount,
         address _to
     ) external onlyOperator {
@@ -785,7 +785,7 @@ contract Treasury is ContractGuard {
         require(address(_token) != address(snow), "snow");
         require(address(_token) != address(sBond), "bond");
         require(address(_token) != address(glcr), "share");
-        _token.safeTransfer(_to, _amount);
+        IERC20(_token).safeTransfer(_to, _amount);
     }
 
     function boardroomSetOperator(address _operator) external onlyOperator {
@@ -820,18 +820,6 @@ contract Treasury is ContractGuard {
             _to
         );
     }
-
-    // function liquidityFundGovernanceRecoverUnsupported(
-    //     address _token,
-    //     uint256 _amount,
-    //     address _to
-    // ) external onlyOperator {
-    //     ILiquidity(liquidityFund).governanceRecoverUnsupported(
-    //         _token,
-    //         _amount,
-    //         _to
-    //     );
-    // }
 
     function snowGovernanceRecoverUnsupported(address _token, address _to)
         external
