@@ -314,6 +314,6 @@ contract LiquidityFund is ContractGuard {
         uint256 _amount,
         address _to
     ) external onlyOperator {
-        IERC20(_token).Transfer(_to, _amount);
+        IERC20(_token).transfer(_to, _amount);
     }
 }

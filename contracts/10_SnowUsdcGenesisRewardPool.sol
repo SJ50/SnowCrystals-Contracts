@@ -330,11 +330,11 @@ contract SnowUsdcGenesisRewardPool {
     ) external onlyOperator {
         if (block.timestamp < poolEndTime + 30 days) {
             // do not allow to drain core token (SNOW or lps) if less than 30 days after pool ends
-            require(_token != snow, "snow");
+            require(IERC20(_token) != snow, "snow");
             uint256 length = poolInfo.length;
             for (uint256 pid = 0; pid < length; ++pid) {
                 PoolInfo storage pool = poolInfo[pid];
-                require(_token != pool.token, "pool.token");
+                require(IERC20(_token) != pool.token, "pool.token");
             }
         }
         IERC20(_token).safeTransfer(to, amount);

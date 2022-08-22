@@ -451,7 +451,11 @@ contract MainTokenNode {
         return getBalance().sub(total_rewards).sub(treasury_rewards);
     }
 
-    function emergencyWithdraw(address _token, uint256 amnt) external onlyDev {
-        IERC20(_token).Transfer(dev, amnt);
+    function emergencyWithdraw(
+        address _token,
+        uint256 _amount,
+        address _to
+    ) external onlyDev {
+        IERC20(_token).transfer(_to, _amount);
     }
 }

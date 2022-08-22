@@ -394,13 +394,13 @@ contract ShareTokenRewardPool {
     ) external onlyOperator {
         if (block.timestamp < poolEndTime + 10 days) {
             // do not allow to drain core token (glcr or lps) if less than 10 days after pool ends
-            require(_token != glcr, "glcr");
+            require(IERC20(_token) != glcr, "glcr");
             uint256 length = poolInfo.length;
             for (uint256 pid = 0; pid < length; ++pid) {
                 PoolInfo storage pool = poolInfo[pid];
-                require(_token != pool.token, "pool.token");
+                require(IERC20(_token) != pool.token, "pool.token");
             }
         }
-        IERC20(_token).safeTransfer(to, amount);
+        IERC20(_token).transfer(to, amount);
     }
 }

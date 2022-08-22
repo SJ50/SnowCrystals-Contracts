@@ -384,6 +384,6 @@ contract SnowBonusRewardPool {
         uint256 amount,
         address to
     ) external onlyOperator {
-        IERC20(_token).Transfer(to, amount);
+        IERC20(_token).transfer(to, amount);
     }
 }
