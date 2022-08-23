@@ -35,6 +35,7 @@ contract ShareTokenRewardPool {
 
     IERC20 public glcr;
     IERC20 public sBond;
+    address public bondBonusRewardPool;
 
     // Info of each pool.
     PoolInfo[] public poolInfo;

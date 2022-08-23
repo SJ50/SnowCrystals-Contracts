@@ -316,9 +316,9 @@ contract SnowSbondBonusRewardPool {
             }
         }
         if (_amount > 0) {
-                user.amount = user.amount.add(_amount);
-            }
+            user.amount = user.amount.add(_amount);
         }
+
         user.rewardDebt = user.amount.mul(pool.accSnowPerShare).div(1e18);
         emit Deposit(_sender, _pid, _amount);
     }
