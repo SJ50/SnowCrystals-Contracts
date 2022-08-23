@@ -362,10 +362,6 @@ contract MainTokenNode {
     //     return total;
     // }
 
-    // function nodePendingPayout() public view returns (uint256) {
-    //     return nodeMaxPayout().sub(nodeTotalclaims());
-    // }
-
     function _disperse(uint256 amount) internal {
         if (amount > 0) {
             totalDistributePoints = totalDistributePoints.add(

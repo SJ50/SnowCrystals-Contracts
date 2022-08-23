@@ -61,11 +61,6 @@ contract Snow is ERC20, ERC20Burnable, Operator {
     mapping(address => bool) private _isExcludedFromFee;
     mapping(address => bool) private _isExcludedToFee;
 
-    address public _debugSender;
-    address public _debugRecepient;
-    address public _previousSender;
-    address public _previousRecepient;
-
     /* ========== GOVERNANCE ========== */
     /**
      * @notice Constructs the SNOW ERC-20 contract.
@@ -378,11 +373,6 @@ contract Snow is ERC20, ERC20Burnable, Operator {
         super._transfer(sender, recipient, _amount);
 
         _updateDollarPrice();
-
-        _previousSender = _debugSender;
-        _previousRecepient = _debugRecepient;
-        _debugSender = sender;
-        _debugRecepient = recipient;
     }
 
     function _getBurnRate(uint256 _tokenPrice) internal returns (uint256) {
