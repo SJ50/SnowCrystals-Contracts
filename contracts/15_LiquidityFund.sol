@@ -294,7 +294,7 @@ contract LiquidityFund is ContractGuard {
         sBondBonusRewardPool = _sBondBonusRewardPool;
     }
 
-    function setnodeBonusRewardPool(address _nodeBonusRewardPool)
+    function setNodeBonusRewardPool(address _nodeBonusRewardPool)
         external
         onlyOperator
     {

@@ -30,8 +30,8 @@ from brownie import (
     SnowDaiGenesisRewardPool,
     SnowCroGenesisRewardPool,
     SnowSnowUsdcLpGenesisRewardPool,
-    SnowBonusRewardPool,
-    SnowSbondRewardPool,
+    SnowNodeBonusRewardPool,
+    SnowSbondBonusRewardPool,
     LiquidityFund,
 )
 from brownie.network.gas.strategies import GasNowStrategy
@@ -355,13 +355,17 @@ def setup_treasury():
 def setup_share_reward_pool():
     share_reward_pool_contract = Contract(share_reward_pool)
     share_reward_add_maintoken_lp_tx = share_reward_pool_contract.add(
-        30000, main_token_lp, 0, 0, {"from": deployer_account}
+        60, main_token_lp, 0, 0, {"from": deployer_account}
     )
     share_reward_add_maintoken_lp_tx.wait(1)
     share_reward_add_sharetoken_lp_tx = share_reward_pool_contract.add(
-        20000, share_token_lp, 0, 0, {"from": deployer_account}
+        40, share_token_lp, 0, 0, {"from": deployer_account}
     )
     share_reward_add_sharetoken_lp_tx.wait(1)
+    share_reward_add_bond_tx = share_reward_pool_contract.add(
+        0, bond_token, 0, 0, {"from": deployer_account}
+    )
+    share_reward_add_bond_tx.wait(1)
 
 
 def setup_node_bonus_reward_pool():

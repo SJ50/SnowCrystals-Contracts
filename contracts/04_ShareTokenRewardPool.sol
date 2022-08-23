@@ -6,6 +6,8 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
+import "../interfaces/IBonusRewards.sol";
+
 // Note that this pool has no minter key of glcr (rewards).
 // Instead, the governance will call glcr distributeReward method and send reward to this pool at the beginning.
 contract ShareTokenRewardPool {
@@ -32,6 +34,7 @@ contract ShareTokenRewardPool {
     }
 
     IERC20 public glcr;
+    IERC20 public sBond;
 
     // Info of each pool.
     PoolInfo[] public poolInfo;
@@ -74,12 +77,14 @@ contract ShareTokenRewardPool {
     constructor(
         address _glcr,
         address _daoFund,
-        uint256 _poolStartTime
+        uint256 _poolStartTime,
+        address _sBond
     ) public {
         require(block.timestamp < _poolStartTime, "late");
         require(_glcr != address(0), "_glcr");
         require(_daoFund != address(0), "_daoFund");
         glcr = IERC20(_glcr);
+        sBond = IERC20(sBond);
         daoFund = _daoFund;
         glcrPerSecond = TOTAL_REWARDS.div(365).div(24).div(60).div(60);
         poolStartTime = _poolStartTime;
@@ -247,6 +252,9 @@ contract ShareTokenRewardPool {
         address _sender = msg.sender;
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_sender];
+        if (pool.token == sBond) {
+            IBonusRewards(bondBonusRewardPool).deposit(0, _amount, _sender);
+        }
         updatePool(_pid);
         if (user.amount > 0) {
             uint256 _pending = user
@@ -327,6 +335,9 @@ contract ShareTokenRewardPool {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_sender];
         require(user.amount >= _amount, "withdraw: not good");
+        if (pool.token == sBond) {
+            IBonusRewards(bondBonusRewardPool).withdraw(0, _amount, _sender);
+        }
         updatePool(_pid);
         uint256 _pending = user.amount.mul(pool.accglcrPerShare).div(1e18).sub(
             user.rewardDebt
@@ -385,6 +396,13 @@ contract ShareTokenRewardPool {
 
     function setDaoFund(address _daoFund) external onlyOperator {
         daoFund = _daoFund;
+    }
+
+    function setBondBonusRewardPool(address _bondBonusRewardPool)
+        external
+        onlyOperator
+    {
+        bondBonusRewardPool = _bondBonusRewardPool;
     }
 
     function governanceRecoverUnsupported(

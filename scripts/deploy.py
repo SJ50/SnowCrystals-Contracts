@@ -30,8 +30,8 @@ from brownie import (
     SnowDaiGenesisRewardPool,
     SnowCroGenesisRewardPool,
     SnowSnowUsdcLpGenesisRewardPool,
-    SnowBonusRewardPool,
-    SnowSbondRewardPool,
+    SnowNodeBonusRewardPool,
+    SnowSbondBonusRewardPool,
     LiquidityFund,
 )
 from brownie.network.gas.strategies import GasNowStrategy
@@ -316,6 +316,7 @@ def deploy_share_token_reward_pool():
             os.environ.get("SHARE_TOKEN"),
             dao_fund,
             start_time,
+            os.environ.get("BOND_TOKEN"),
             {"from": deployer_account},
             publish_source=publish_source,
         )
@@ -330,12 +331,12 @@ def deploy_share_token_reward_pool():
 
 
 def deploy_bonus_reward_pool():
-    if len(SnowBonusRewardPool) <= 0:
+    if len(SnowNodeBonusRewardPool) <= 0:
         print("deploying bonus reward pool!")
         main_token = os.environ.get("MAIN_TOKEN")
         pool_start_time = start_time
         deposit_token = os.environ.get("MAIN_TOKEN_LP")
-        snow_bounus_pool_contract = SnowBonusRewardPool.deploy(
+        snow_bounus_pool_contract = SnowNodeBonusRewardPool.deploy(
             main_token,
             pool_start_time,
             deposit_token,
@@ -346,7 +347,7 @@ def deploy_bonus_reward_pool():
             ".env",
             "export NODE_BONUS_REWARD_POOL=" + snow_bounus_pool_contract.address,
         )
-    snow_bounus_pool_contract = SnowBonusRewardPool[-1]
+    snow_bounus_pool_contract = SnowNodeBonusRewardPool[-1]
     os.environ["NODE_BONUS_REWARD_POOL"] = snow_bounus_pool_contract.address
     return snow_bounus_pool_contract
 
@@ -552,12 +553,12 @@ def deploy_snowusdclp_genesis_pool():
 
 
 def deploy_sbond_reward_pool():
-    if len(SnowSbondRewardPool) <= 0:
+    if len(SnowSbondBonusRewardPool) <= 0:
         main_token = os.environ.get("MAIN_TOKEN")
         deposit_fee = 0
         pool_start_time = start_time
         deposit_token = os.environ.get("BOND_TOKEN")
-        sbond_reward_pool_contract = SnowSbondRewardPool.deploy(
+        sbond_reward_pool_contract = SnowSbondBonusRewardPool.deploy(
             main_token,
             pool_start_time,
             dao_fund,
@@ -570,7 +571,7 @@ def deploy_sbond_reward_pool():
             ".env",
             "export SBOND_REWARD_POOL=" + sbond_reward_pool_contract.address,
         )
-    sbond_reward_pool_contract = SnowSbondRewardPool[-1]
+    sbond_reward_pool_contract = SnowSbondBonusRewardPool[-1]
     os.environ["SBOND_REWARD_POOL"] = sbond_reward_pool_contract.address
     return sbond_reward_pool_contract
 

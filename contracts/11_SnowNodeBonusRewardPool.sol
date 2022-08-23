@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 
 // Note that this pool has no minter key of SNOW (rewards).
 // Instead, the governance will call SNOW distributeReward method and send reward to this pool at the beginning.
-contract SnowBonusRewardPool {
+contract SnowNodeBonusRewardPool {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 

@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 
 // Note that this pool has no minter key of SNOW (rewards).
 // Instead, the governance will call SNOW distributeReward method and send reward to this pool at the beginning.
-contract SnowSbondRewardPool {
+contract SnowSbondBonusRewardPool {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -241,7 +241,7 @@ contract SnowSbondRewardPool {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
         uint256 accSnowPerShare = pool.accSnowPerShare;
-        uint256 tokenSupply = pool.token.balanceOf(address(this));
+        uint256 tokenSupply = pool.token.balanceOf(glcrRewardPool);
         if (block.timestamp > pool.lastRewardTime && tokenSupply != 0) {
             uint256 _generatedReward = getGeneratedReward(
                 pool.lastRewardTime,
@@ -271,7 +271,7 @@ contract SnowSbondRewardPool {
         if (block.timestamp <= pool.lastRewardTime) {
             return;
         }
-        uint256 tokenSupply = pool.token.balanceOf(address(this));
+        uint256 tokenSupply = pool.token.balanceOf(glcrRewardPool);
         if (tokenSupply == 0) {
             pool.lastRewardTime = block.timestamp;
             return;
@@ -296,8 +296,11 @@ contract SnowSbondRewardPool {
     }
 
     // Deposit LP tokens.
-    function deposit(uint256 _pid, uint256 _amount) public {
-        address _sender = msg.sender;
+    function deposit(
+        uint256 _pid,
+        uint256 _amount,
+        address _sender
+    ) public onlyOperatorOrGlcrRewardPool {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_sender];
         updatePool(_pid);
@@ -312,30 +315,20 @@ contract SnowSbondRewardPool {
                 emit RewardPaid(_sender, _pending);
             }
         }
-
         if (_amount > 0) {
-            if (daoFund != address(0) && depositFee != 0) {
-                uint256 feeAmount = _amount.mul(depositFee).div(10000);
-                pool.token.safeTransferFrom(_sender, daoFund, feeAmount);
-                pool.token.safeTransferFrom(
-                    _sender,
-                    address(this),
-                    _amount.sub(feeAmount)
-                );
-                user.amount = user.amount.add(_amount.sub(feeAmount));
-            } else {
-                pool.token.safeTransferFrom(_sender, address(this), _amount);
                 user.amount = user.amount.add(_amount);
             }
         }
-
         user.rewardDebt = user.amount.mul(pool.accSnowPerShare).div(1e18);
         emit Deposit(_sender, _pid, _amount);
     }
 
     // Withdraw LP tokens.
-    function withdraw(uint256 _pid, uint256 _amount) public {
-        address _sender = msg.sender;
+    function withdraw(
+        uint256 _pid,
+        uint256 _amount,
+        address _sender
+    ) public onlyOperatorOrGlcrRewardPool {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_sender];
         require(user.amount >= _amount, "withdraw: not good");
@@ -349,21 +342,9 @@ contract SnowSbondRewardPool {
         }
         if (_amount > 0) {
             user.amount = user.amount.sub(_amount);
-            pool.token.safeTransfer(_sender, _amount);
         }
         user.rewardDebt = user.amount.mul(pool.accSnowPerShare).div(1e18);
         emit Withdraw(_sender, _pid, _amount);
-    }
-
-    // Withdraw without caring about rewards. EMERGENCY ONLY.
-    function emergencyWithdraw(uint256 _pid) public {
-        PoolInfo storage pool = poolInfo[_pid];
-        UserInfo storage user = userInfo[_pid][msg.sender];
-        uint256 _amount = user.amount;
-        user.amount = 0;
-        user.rewardDebt = 0;
-        pool.token.safeTransfer(msg.sender, _amount);
-        emit EmergencyWithdraw(msg.sender, _pid, _amount);
     }
 
     // Safe SNOW transfer function, just in case if rounding error causes pool to not have enough SNOWs.
