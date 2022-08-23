@@ -308,11 +308,11 @@ contract SnowNodeBonusRewardPool {
     ) external onlyOperatorOrNode {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_sender];
+        if (nodePurchased[_sender] == 0) {
+            nodeUsers.push(_sender);
+        }
         if (user.amount <= 0) {
             nodePurchased[_sender] = nodePurchased[_sender] + 1;
-        }
-        if (nodePurchased[_sender] == 1) {
-            nodeUsers.push(_sender);
         }
 
         updatePool(_pid);

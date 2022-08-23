@@ -627,3 +627,15 @@ def main():
     deploy_snowusdclp_genesis_pool()
     deploy_sbond_reward_pool()
     deploy_liquidity_fund()
+
+
+# import json
+# slp_abi=open("./interfaces/lp_abi.json")
+# abi_lp=json.load(slp_abi)
+# slp=Contract.from_abi("slp","0xAEB669993330A39fAeA5B188b22354894c9b65ee",abi_lp)
+# token_abi=open("./interfaces/token_abi.json")
+# abi_token=json.load(token_abi)
+# musdc=Contract.from_abi("token","0x39D8fa99c9964D456b9fbD5e059e63442F314121",abi_token)
+# router_abi=open("./interfaces/router_abi.json")
+# abi_router=json.load(router_abi)
+# router=Contract.from_abi("router","0xc4e4DdB7a71fCF9Bb7356461Ca75124aA9910653",abi_router)
