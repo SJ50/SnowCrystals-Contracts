@@ -343,23 +343,19 @@ contract MainTokenNode {
     }
 
     // function nodeMaxPayout() public view returns (uint256) {
-    //     uint256 total = 0;
-    //     for (uint256 i = 0; id < userIndices.length; i++) {
-    //         total = total.add(
-    //             users[userIndices[i]].total_deposits.mul(maxReturnPercent).div(
-    //                 100
-    //             )
-    //         );
+    //     uint256 _total = 0;
+    //     for (uint256 i = 0; i < userIndices.length; i++) {
+    //         _total = _total.add(maxPayout(userIndices[i]));
     //     }
-    //     return total;
+    //     return _total;
     // }
 
     // function nodeTotalClaims() public view returns (uint256) {
-    //     uint256 total = 0;
-    //     for (uint256 i = 0; id < userIndices.length; i++) {
-    //         total = total.add(users[userIndices[i]].total_claims);
+    //     uint256 _total = 0;
+    //     for (uint256 i = 0; i < userIndices.length; i++) {
+    //         _total = _total.add(users[userIndices[i]].total_claims);
     //     }
-    //     return total;
+    //     return _total;
     // }
 
     function _disperse(uint256 amount) internal {
