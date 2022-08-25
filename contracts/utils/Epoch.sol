@@ -13,6 +13,7 @@ contract Epoch is Operator {
     uint256 private startTime;
     uint256 private lastEpochTime;
     uint256 private epoch;
+    address public caller;
 
     /* ========== CONSTRUCTOR ========== */
 
@@ -30,16 +31,18 @@ contract Epoch is Operator {
     /* ========== Modifier ========== */
 
     modifier checkStartTime() {
-        require(block.timestamp >= startTime, "Epoch: not started yet");
+        require(now >= startTime, "Epoch: not started yet");
 
         _;
     }
 
     modifier checkEpoch() {
         uint256 _nextEpochPoint = nextEpochPoint();
-        if (block.timestamp < _nextEpochPoint) {
+        if (now < _nextEpochPoint) {
             require(
-                msg.sender == operator(),
+                msg.sender == operator() ||
+                    msg.sender == owner() ||
+                    msg.sender == caller,
                 "Epoch: only operator allowed for pre-epoch"
             );
             _;
@@ -50,7 +53,7 @@ contract Epoch is Operator {
                 lastEpochTime = _nextEpochPoint;
                 ++epoch;
                 _nextEpochPoint = nextEpochPoint();
-                if (block.timestamp < _nextEpochPoint) break;
+                if (now < _nextEpochPoint) break;
             }
         }
     }
@@ -89,5 +92,9 @@ contract Epoch is Operator {
 
     function setEpoch(uint256 _epoch) external onlyOperator {
         epoch = _epoch;
+    }
+
+    function setCaller(address _caller) external onlyOperator {
+        caller = _caller;
     }
 }

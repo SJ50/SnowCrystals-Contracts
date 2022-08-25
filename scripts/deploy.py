@@ -639,3 +639,6 @@ def main():
 # router_abi=open("./interfaces/router_abi.json")
 # abi_router=json.load(router_abi)
 # router=Contract.from_abi("router","0xc4e4DdB7a71fCF9Bb7356461Ca75124aA9910653",abi_router)
+# zap_abi=open("./interfaces/zap_abi.json")
+# abi_zap=json.load(zap_abi)
+# zap=Contract.from_abi("zap","0x4af16D0b8DB8a49AE3D83847b99f8c8DF710a319",abi_zap)
