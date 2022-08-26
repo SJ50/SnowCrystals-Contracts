@@ -306,6 +306,11 @@ def setup_oracle():
     print("Updating Oracle...")
     update_tx = oracle_contract.update({"from": deployer_account})
     update_tx.wait(1)
+    print("setting Treasury as Oracle operator...")
+    transfer_operator_tx = oracle_contract.transferOperator(
+        treasury, {"from": deployer_account}
+    )
+    transfer_operator_tx.wait(1)
 
 
 def setup_treasury():
