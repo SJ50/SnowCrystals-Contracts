@@ -16,16 +16,16 @@ contract Glcr is ERC20, ERC20Burnable, Operator {
     using SafeMath for uint256;
 
     /*
-        TOTAL MAX SUPPLY = 68,000 GLCR
-        - 50000 GLCRs allocated to farming pools
-        - Airdop 500 GLCRs allocated to DAO wallet
-        - Allocate 11500 GLCRs to DAO wallet for linear vesting
-        - Airdrop 10 GLCRs to Dev wallet
-        - Allocate 5990 GLCRs to Dev wallet for linear vesting
+        TOTAL MAX SUPPLY = 32000 GLCR
+        - 21500 GLCRs allocated to farming pools
+        - Airdop 250 GLCRs allocated to DAO wallet
+        - Allocate 6750 GLCRs to DAO wallet for linear vesting
+        - Airdrop 180 GLCRs to Dev wallet
+        - Allocate 3320 GLCRs to Dev wallet for linear vesting
     */
     uint256 public constant FARMING_POOL_REWARD_ALLOCATION = 21500 ether;
     uint256 public constant COMMUNITY_FUND_POOL_ALLOCATION = 6750 ether;
-    uint256 public constant DEV_FUND_POOL_ALLOCATION = 3450 ether;
+    uint256 public constant DEV_FUND_POOL_ALLOCATION = 3320 ether;
 
     uint256 public constant VESTING_DURATION = 52 weeks;
     uint256 public startTime;
@@ -49,9 +49,9 @@ contract Glcr is ERC20, ERC20Burnable, Operator {
         address _daoFund,
         address _devFund
     ) public ERC20(name_, symbol_) {
-        _mint(msg.sender, 2 ether); // mint 2 Share for initial pools deployment and Boardroom initialization
-        _mint(_daoFund, 500 ether); // Airdop 500 WSHAREs allocated to DAO wallet
-        _mint(_devFund, 50 ether); // Airdop 500 WSHAREs allocated to DAO wallet
+        _mint(msg.sender, 1 ether); // mint 1 Share for initial pools deployment and Boardroom initialization
+        _mint(_daoFund, 250 ether); // Airdop 250 GLCR allocated to DAO wallet
+        _mint(_devFund, 180 ether); // Airdop 180 GLCR allocated to DEVwallet
 
         startTime = _startTime;
         endTime = startTime + VESTING_DURATION;

@@ -788,6 +788,10 @@ contract Treasury is ContractGuard {
         IERC20(_token).safeTransfer(_to, _amount);
     }
 
+    /** 
+    Boardroom governance
+    **/
+
     function boardroomSetOperator(address _operator) external onlyOperator {
         IBoardroom(boardroom).setOperator(_operator);
     }
@@ -821,17 +825,58 @@ contract Treasury is ContractGuard {
         );
     }
 
-    function snowGovernanceRecoverUnsupported(address _token, address _to)
+    /** 
+    Snow token contract governance
+    **/
+
+    function snowSetBurnTiersRate(uint8 _index, uint256 _value)
         external
         onlyOperator
     {
-        IBasisAsset(snow).governanceRecoverUnsupported(_token, _to);
+        IBasisAsset(snow).setBurnTiersRate(_index, _value);
     }
 
-    function glcrGovernanceRecoverUnsupported(address _token, address _to)
+    function snowSetExcludeBothDirectionsFee(address _account, bool _status)
         external
         onlyOperator
     {
-        IBasisAsset(glcr).governanceRecoverUnsupported(_token, _to);
+        IBasisAsset(snow).setExcludeBothDirectionsFee(_account, _status);
+    }
+
+    function snowSetExcludeFromFee(address _account, bool _status)
+        external
+        onlyOperator
+    {
+        IBasisAsset(snow).setExcludeFromFee(_account, _status);
+    }
+
+    function snowSetExcludeToFee(address _account, bool _status)
+        external
+        onlyOperator
+    {
+        IBasisAsset(snow).setExcludeToFee(_account, _status);
+    }
+
+    function snowSetOracle(address _oracle) external onlyOperator {
+        IBasisAsset(snow).setOracle(_oracle);
+    }
+
+    function snowSetTaxFund(address _taxFund) external onlyOperator {
+        IBasisAsset(snow).setTaxFund(_taxFund);
+    }
+
+    function snowSetTaxTiersRate(uint8 _index, uint256 _value)
+        external
+        onlyOperator
+    {
+        IBasisAsset(snow).setTaxTiersRate(_index, _value);
+    }
+
+    function snowSwitchEnableUpdatePrice() external onlyOperator {
+        IBasisAsset(snow).switchEnableUpdatePrice();
+    }
+
+    function snowToggleAddLiquidityEnabled() external onlyOperator {
+        IBasisAsset(snow).toggleAddLiquidityEnabled();
     }
 }

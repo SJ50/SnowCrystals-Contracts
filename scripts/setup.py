@@ -25,7 +25,6 @@ from brownie import (
     ShareTokenNode,
     SnowBtcGenesisRewardPool,
     SnowEthGenesisRewardPool,
-    SnowUsdcGenesisRewardPool,
     SnowUsdtGenesisRewardPool,
     SnowDaiGenesisRewardPool,
     SnowCroGenesisRewardPool,
@@ -98,13 +97,13 @@ share_token_lp = os.environ.get("SHARE_TOKEN_LP")
 node_bonus_reward_pool = os.environ.get("NODE_BONUS_REWARD_POOL")
 main_token_node = os.environ.get("MAIN_TOKEN_NODE")
 share_token_node = os.environ.get("SHARE_TOKEN_NODE")
-usdc_genesis_pool = os.environ.get("USDC_GENESIS_POOL")
-cro_genesis_pool = os.environ.get("CRO_GENESIS_POOL")
-btc_genesis_pool = os.environ.get("BTC_GENESIS_POOL")
-eth_genesis_pool = os.environ.get("ETH_GENESIS_POOL")
-dai_genesis_pool = os.environ.get("DAI_GENESIS_POOL")
-usdt_genesis_pool = os.environ.get("USDT_GENESIS_POOL")
-snowusdclp_genesis_pool = os.environ.get("SNOWUSDC_GENESIS_POOL")
+genesis_pool = os.environ.get("GENESIS_POOL")
+# cro_genesis_pool = os.environ.get("CRO_GENESIS_POOL")
+# btc_genesis_pool = os.environ.get("BTC_GENESIS_POOL")
+# eth_genesis_pool = os.environ.get("ETH_GENESIS_POOL")
+# dai_genesis_pool = os.environ.get("DAI_GENESIS_POOL")
+# usdt_genesis_pool = os.environ.get("USDT_GENESIS_POOL")
+# snowusdclp_genesis_pool = os.environ.get("SNOWUSDC_GENESIS_POOL")
 sbond_reward_pool = os.environ.get("SBOND_REWARD_POOL")
 liquidity_fund = os.environ.get("LIQUIDITY_FUND")
 rebate_treasury = os.environ.get("REBATE_TREASURY")
@@ -113,26 +112,12 @@ zap = os.environ.get("ZAP")
 
 def setup_main_token():
     main_token_contract = Contract(main_token)
-
-    print("Maintoken setting treasury as operator...")
-    set_operator_tx = main_token_contract.transferOperator(
-        treasury,
-        {"from": deployer_account},
-    )
-    set_operator_tx.wait(1)
-
     print("Maintoken setting oracle...")
     set_oracle_tx = main_token_contract.setOracle(
         oracle,
         {"from": deployer_account},
     )
     set_oracle_tx.wait(1)
-
-    print("Maintoken enabling addliquidity...")
-    enable_add_liquidity_tx = main_token_contract.toggleAddLiquidityEnabled(
-        {"from": deployer_account},
-    )
-    enable_add_liquidity_tx.wait(1)
 
     print("Maintoken exclude maintokenLP from tax to make buying token tax free...")
     set_lp_exclude_from_fee_tx = main_token_contract.setExcludeFromFee(
@@ -235,6 +220,28 @@ def setup_main_token():
         )
         set_tax_tier_rate.wait(1)
 
+    print("Distribute rewards...")
+    set_distribute_reward_tx = main_token_contract.distributeReward(
+        [genesis_pool],
+        [10000],
+        dao_fund,
+        {"from": deployer_account},
+    )
+    set_distribute_reward_tx.wait(1)
+
+    print("Maintoken setting treasury as operator...")
+    set_operator_tx = main_token_contract.transferOperator(
+        treasury,
+        {"from": deployer_account},
+    )
+    set_operator_tx.wait(1)
+
+    print("renounce ownership..")
+    set_renounceOwnership_tx = main_token_contract.renounceOwnership(
+        {"from": deployer_account}
+    )
+    set_renounceOwnership_tx.wait(1)
+
 
 def setup_bond_token():
     bond_token_contract = Contract(bond_token)
@@ -244,6 +251,11 @@ def setup_bond_token():
         {"from": deployer_account},
     )
     set_operator_tx.wait(1)
+    print("renounce ownership..")
+    set_renounceOwnership_tx = bond_token_contract.renounceOwnership(
+        {"from": deployer_account}
+    )
+    set_renounceOwnership_tx.wait(1)
 
 
 def setup_share_token():
@@ -273,20 +285,6 @@ def setup_boardroom():
         {"from": deployer_account},
     )
     boardroom_initialized_tx.wait(1)
-    # print("Setting Oracle...")
-    # main_token_oracle = deploy_main_token_oracle_contract()
-    # boardroom_token_config_tx = boardroom_contract.setPegTokenConfig(
-    #     main_token,
-    #     oracle,
-    #     {"from": deployer_account},
-    # )
-    # boardroom_token_config_tx.wait(1)
-    # print("adding peg tokens..")
-    # boardroom_add_peg_token_tx = boardroom_contract.addPegToken(
-    #     main_token,
-    #     {"from": deployer_account},
-    # )
-    # boardroom_add_peg_token_tx.wait(1)
     print("Boardroom setting treasury as operator...")
     set_operator_tx = boardroom_contract.setOperator(
         treasury,
@@ -355,6 +353,40 @@ def setup_treasury():
     (76,150) @ 64 epoch // @ 18 days
    
     """
+
+
+def setup_genesis_pool():
+    genesis_pool_contract = Contract(genesis_pool)
+    wBTC = "0xB5294e29A6e4CbFbb269a6240313b593190ef544"
+    wETH = "0x1e8B3db284ef89E19Bc8edb7A0c5246be288a824"
+    wCRO = "0x6a3173618859C7cd40fAF6921b5E9eB6A76f1fD4"
+    wDAI = "0x4b23dfd7e925b543E4354A5D4eA8AD47699e6f12"
+    wUSDT = "0xf1852356be8aD76dAAD31acEB55018Dd87961109"
+    print("adding wBTC to genesis pool...")
+    set_wBTC_genesis_pool_tx = genesis_pool_contract.add(
+        1, wBTC, False, 0, {"from": deployer_account}
+    )
+    set_wBTC_genesis_pool_tx.wait(1)
+    print("adding wETH to genesis pool...")
+    set_wETH_genesis_pool_tx = genesis_pool_contract.add(
+        1, wETH, False, 0, {"from": deployer_account}
+    )
+    set_wETH_genesis_pool_tx.wait(1)
+    print("adding wCRO to genesis pool...")
+    set_wCRO_genesis_pool_tx = genesis_pool_contract.add(
+        1, wCRO, False, 0, {"from": deployer_account}
+    )
+    set_wCRO_genesis_pool_tx.wait(1)
+    print("adding wDAI to genesis pool...")
+    set_wDAI_genesis_pool_tx = genesis_pool_contract.add(
+        1, wDAI, False, 0, {"from": deployer_account}
+    )
+    set_wDAI_genesis_pool_tx.wait(1)
+    print("adding wUSDT to genesis pool...")
+    set_wUSDT_genesis_pool_tx = genesis_pool_contract.add(
+        1, wUSDT, False, 0, {"from": deployer_account}
+    )
+    set_wUSDT_genesis_pool_tx.wait(1)
 
 
 def setup_share_reward_pool():
@@ -427,13 +459,13 @@ def get_all_info():
     print(f"NODE BONUS REWARD POOL contract is {node_bonus_reward_pool}")
     print(f"MAIN TOKEN NODE contract is {main_token_node}")
     print(f"SHARE TOKEN NODE contract is {share_token_node}")
-    print(f"SNOW-USDC-LP GENESIS POOl contract is {snowusdclp_genesis_pool}")
-    print(f"USDC GENESIS POOL contract is {usdc_genesis_pool}")
-    print(f"CRO GENESIS POOL contract is {cro_genesis_pool}")
-    print(f"USDT GENESIS POOL contract is {usdt_genesis_pool}")
-    print(f"DAI GENESIS POOL contract is {dai_genesis_pool}")
-    print(f"ETH GENESIS POOL contract is {eth_genesis_pool}")
-    print(f"BTC GENESIS POOL contract is {btc_genesis_pool}")
+    print(f"GENESIS POOL contract is {genesis_pool}")
+    # print(f"SNOW-USDC-LP GENESIS POOl contract is {snowusdclp_genesis_pool}")
+    # print(f"CRO GENESIS POOL contract is {cro_genesis_pool}")
+    # print(f"USDT GENESIS POOL contract is {usdt_genesis_pool}")
+    # print(f"DAI GENESIS POOL contract is {dai_genesis_pool}")
+    # print(f"ETH GENESIS POOL contract is {eth_genesis_pool}")
+    # print(f"BTC GENESIS POOL contract is {btc_genesis_pool}")
     print(f"SBOND BONUS POOL contract is {sbond_reward_pool}")
     print(f"LIQUIDITY FUND contract is {liquidity_fund}")
     print(f"ZAP contract is {zap}")
@@ -452,6 +484,7 @@ def main():
     setup_boardroom()
     setup_treasury()
     setup_share_reward_pool()
+    setup_genesis_pool()
     setup_node_bonus_reward_pool()
     setup_zap()
     get_all_info()

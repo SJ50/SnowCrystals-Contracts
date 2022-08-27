@@ -2,23 +2,34 @@
 pragma solidity ^0.6.0;
 
 interface IBasisAsset {
-    function mint(address recipient, uint256 amount) external returns (bool);
-
     function burn(uint256 amount) external;
 
     function burnFrom(address from, uint256 amount) external;
 
-    function isOperator() external returns (bool);
+    function mint(address recipient, uint256 amount) external returns (bool);
 
     function operator() external view returns (address);
 
-    function transferOperator(address newOperator_) external;
+    function setBurnTiersRate(uint8 _index, uint256 _value)
+        external
+        returns (bool);
 
-    function transferOwnership(address newOwner_) external;
+    function setExcludeBothDirectionsFee(address _account, bool _status)
+        external;
 
-    function distributeReward(address _launcherAddress) external;
+    function setExcludeFromFee(address _account, bool _status) external;
 
-    function totalBurned() external view returns (uint256);
+    function setExcludeToFee(address _account, bool _status) external;
 
-    function governanceRecoverUnsupported(address _token, address _to) external;
+    function setOracle(address _oracle) external;
+
+    function setTaxFund(address _taxFund) external;
+
+    function setTaxTiersRate(uint8 _index, uint256 _value)
+        external
+        returns (bool);
+
+    function switchEnableUpdatePrice() external;
+
+    function toggleAddLiquidityEnabled() external;
 }

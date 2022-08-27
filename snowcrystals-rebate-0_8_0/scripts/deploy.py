@@ -51,7 +51,7 @@ peg_token = os.environ.get("PEG_TOKEN")
 
 
 def deploy_zap():
-    if len(Zap) <= 2:
+    if len(Zap) <= 0:
         print("deploying Zap...")
         zap = Zap.deploy(
             peg_token,

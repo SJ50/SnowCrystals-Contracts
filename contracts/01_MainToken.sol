@@ -4,7 +4,6 @@ pragma solidity ^0.6.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/math/Math.sol";
 
@@ -25,7 +24,7 @@ contract Snow is ERC20, ERC20Burnable, Operator {
     // Initial distribution for the first 48h genesis pools
     uint256 public constant INITIAL_GENESIS_POOL_DISTRIBUTION = 24000 ether;
     // Distribution for airdrops wallet
-    uint256 public constant INITIAL_DAO_WALLET_DISTRIBUTION = 1000 ether;
+    uint256 public constant INITIAL_DAO_WALLET_DISTRIBUTION = 1008 ether;
 
     // Have the rewards been distributed to the pools
     bool public rewardPoolDistributed = false;
@@ -55,11 +54,11 @@ contract Snow is ERC20, ERC20Burnable, Operator {
     address public pegToken;
     address public daoWallet;
 
-    uint256 private _totalBurned;
-    uint256 private _totalTaxAdded;
+    uint256 public totalBurned;
+    uint256 private totalTaxAdded;
     bool public enableUpdatePrice;
-    mapping(address => bool) private _isExcludedFromFee;
-    mapping(address => bool) private _isExcludedToFee;
+    mapping(address => bool) public isExcludedFromFee;
+    mapping(address => bool) public isExcludedToFee;
 
     /* ========== GOVERNANCE ========== */
     /**
@@ -74,10 +73,11 @@ contract Snow is ERC20, ERC20Burnable, Operator {
         // "snowcrystals.finance", "SNOW"
 
         enableUpdatePrice = true;
+        addLiquidityEnabled = true;
         taxFund = _taxFund;
 
         // Mints 10 SNOW to contract creator for initial pool setup
-        _mint(msg.sender, 1000 ether);
+        _mint(msg.sender, 10 ether);
     }
 
     /**
@@ -128,11 +128,11 @@ contract Snow is ERC20, ERC20Burnable, Operator {
     /* ========== Modifiers =============== */
 
     /* ============= Taxation ============= */
-    function setOracle(address _oracle) external onlyOwner {
+    function setOracle(address _oracle) external onlyOperator {
         oracle = _oracle;
     }
 
-    function toggleAddLiquidityEnabled() external onlyOwner {
+    function toggleAddLiquidityEnabled() external onlyOperator {
         addLiquidityEnabled = !addLiquidityEnabled;
     }
 
@@ -170,7 +170,7 @@ contract Snow is ERC20, ERC20Burnable, Operator {
 
     function setBurnTiersRate(uint8 _index, uint256 _value)
         public
-        onlyOwner
+        onlyOperator
         returns (bool)
     {
         require(_value <= 1500, "allowed maximum burn rate 15%");
@@ -185,7 +185,7 @@ contract Snow is ERC20, ERC20Burnable, Operator {
 
     function setTaxTiersRate(uint8 _index, uint256 _value)
         public
-        onlyOwner
+        onlyOperator
         returns (bool)
     {
         require(_value <= 1500, "allowed maximum burn rate 15%");
@@ -198,31 +198,31 @@ contract Snow is ERC20, ERC20Burnable, Operator {
         return true;
     }
 
-    function setTaxFund(address _taxFund) external onlyOwner {
+    function setTaxFund(address _taxFund) external onlyOperator {
         require(_taxFund != address(0), "zero");
         taxFund = _taxFund;
     }
 
     function setExcludeFromFee(address _account, bool _status)
         external
-        onlyOwner
+        onlyOperator
     {
-        _isExcludedFromFee[_account] = _status;
+        isExcludedFromFee[_account] = _status;
     }
 
     function setExcludeToFee(address _account, bool _status)
         external
-        onlyOwner
+        onlyOperator
     {
-        _isExcludedToFee[_account] = _status;
+        isExcludedToFee[_account] = _status;
     }
 
     function setExcludeBothDirectionsFee(address _account, bool _status)
         external
-        onlyOwner
+        onlyOperator
     {
-        _isExcludedFromFee[_account] = _status;
-        _isExcludedToFee[_account] = _status;
+        isExcludedFromFee[_account] = _status;
+        isExcludedToFee[_account] = _status;
     }
 
     function switchEnableUpdatePrice() external onlyOwner {
@@ -230,14 +230,6 @@ contract Snow is ERC20, ERC20Burnable, Operator {
     }
 
     /* ========== VIEW FUNCTIONS ========== */
-
-    function totalBurned() external view returns (uint256) {
-        return _totalBurned;
-    }
-
-    function totalTaxAdded() external view returns (uint256) {
-        return _totalTaxAdded;
-    }
 
     function getTokenPrice() public view returns (uint256) {
         address _oracle = oracle;
@@ -253,14 +245,6 @@ contract Snow is ERC20, ERC20Burnable, Operator {
             (_oracle == address(0))
                 ? 1e18
                 : uint256(IOracle(_oracle).twap(address(this), 1e18));
-    }
-
-    function isExcludedFromFee(address _account) external view returns (bool) {
-        return _isExcludedFromFee[_account];
-    }
-
-    function isExcludedToFee(address _account) external view returns (bool) {
-        return _isExcludedToFee[_account];
     }
 
     /* ========== MUTATIVE FUNCTIONS ========== */
@@ -316,7 +300,7 @@ contract Snow is ERC20, ERC20Burnable, Operator {
      */
     function _burn(address _account, uint256 _amount) internal override {
         super._burn(_account, _amount);
-        _totalBurned = _totalBurned.add(_amount);
+        totalBurned = totalBurned.add(_amount);
         emit TokenBurned(_account, _amount);
     }
 
@@ -346,7 +330,7 @@ contract Snow is ERC20, ERC20Burnable, Operator {
 
         _beforeTokenTransfer(sender, recipient, _amount);
 
-        if (!_isExcludedFromFee[sender] && !_isExcludedToFee[recipient]) {
+        if (!isExcludedFromFee[sender] && !isExcludedToFee[recipient]) {
             uint256 _tokenPrice = getTokenUpdatedPrice();
 
             uint256 _taxRate = _getTaxRate(_tokenPrice);
@@ -355,7 +339,7 @@ contract Snow is ERC20, ERC20Burnable, Operator {
                 address _taxFund = taxFund;
                 super._transfer(sender, _taxFund, _taxAmount);
                 _amount = _amount.sub(_taxAmount);
-                _totalTaxAdded = _totalTaxAdded.add(_taxAmount);
+                totalTaxAdded = totalTaxAdded.add(_taxAmount);
                 if (addLiquidityEnabled) {
                     ILiquidityFund(_taxFund).addLiquidity(_taxAmount);
                 }

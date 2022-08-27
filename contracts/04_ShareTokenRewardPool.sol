@@ -85,7 +85,7 @@ contract ShareTokenRewardPool {
         require(_glcr != address(0), "_glcr");
         require(_daoFund != address(0), "_daoFund");
         glcr = IERC20(_glcr);
-        sBond = IERC20(sBond);
+        sBond = IERC20(_sBond);
         daoFund = _daoFund;
         glcrPerSecond = TOTAL_REWARDS.div(365).div(24).div(60).div(60);
         poolStartTime = _poolStartTime;
@@ -319,7 +319,7 @@ contract ShareTokenRewardPool {
         }
 
         uint256 timePassed = block.timestamp - poolStartTime;
-        uint256 taxPercent;
+        uint256 taxPercent = 100;
         for (uint256 i = 0; i < stakingTires.length; i++) {
             if (timePassed <= stakingTires[i]) {
                 taxPercent = withdrawTaxTires[i];
@@ -411,8 +411,8 @@ contract ShareTokenRewardPool {
         uint256 amount,
         address to
     ) external onlyOperator {
-        if (block.timestamp < poolEndTime + 10 days) {
-            // do not allow to drain core token (glcr or lps) if less than 10 days after pool ends
+        if (block.timestamp < poolEndTime + 90 days) {
+            // do not allow to drain core token (glcr or lps) if less than 30 days after pool ends
             require(IERC20(_token) != glcr, "glcr");
             uint256 length = poolInfo.length;
             for (uint256 pid = 0; pid < length; ++pid) {

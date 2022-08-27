@@ -20,12 +20,14 @@ contract Epoch is Operator {
     constructor(
         uint256 _period,
         uint256 _startTime,
-        uint256 _startEpoch
+        uint256 _startEpoch,
+        address _caller
     ) public {
         period = _period;
         startTime = _startTime;
         epoch = _startEpoch;
         lastEpochTime = startTime.sub(period);
+        caller = _caller;
     }
 
     /* ========== Modifier ========== */

@@ -1,4 +1,4 @@
-from brownie import network, accounts, config, Contract, MockUsdc, MockBtc
+from brownie import network, accounts, config, Contract, MockUsdc
 import json
 
 
@@ -62,7 +62,7 @@ contract_to_mock = {
     # "fau_token": MockDAI,
     # "weth_token": MockWETH,
     "usdc_token": MockUsdc,
-    "btc_token": MockBtc,
+    # "btc_token": MockBtc,
 }
 
 

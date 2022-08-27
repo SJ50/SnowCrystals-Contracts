@@ -23,9 +23,9 @@ from brownie import (
     ShareTokenRewardPool,
     MainTokenNode,
     ShareTokenNode,
+    SnowGenesisRewardPool,
     SnowBtcGenesisRewardPool,
     SnowEthGenesisRewardPool,
-    SnowUsdcGenesisRewardPool,
     SnowUsdtGenesisRewardPool,
     SnowDaiGenesisRewardPool,
     SnowCroGenesisRewardPool,
@@ -390,13 +390,13 @@ def deploy_share_token_node():
     return share_token_node_contract
 
 
-def deploy_usdc_genesis_pool():
-    if len(SnowUsdcGenesisRewardPool) <= 0:
+def deploy_genesis_pool():
+    if len(SnowGenesisRewardPool) <= 0:
         main_token = os.environ.get("MAIN_TOKEN")
-        deposit_fee = 100
+        deposit_fee = 120
         pool_start_time = start_time
         deposit_token = os.environ.get("PEG_TOKEN")
-        usdc_genesis_pool_contract = SnowUsdcGenesisRewardPool.deploy(
+        usdc_genesis_pool_contract = SnowGenesisRewardPool.deploy(
             main_token,
             pool_start_time,
             dao_fund,
@@ -406,150 +406,150 @@ def deploy_usdc_genesis_pool():
             publish_source=publish_source,
         )
         append_new_line(
-            ".env", "export USDC_GENESIS_POOL=" + usdc_genesis_pool_contract.address
+            ".env", "export GENESIS_POOL=" + usdc_genesis_pool_contract.address
         )
-    usdc_genesis_pool_contract = SnowUsdcGenesisRewardPool[-1]
-    os.environ["USDC_GENESIS_POOL"] = usdc_genesis_pool_contract.address
+    usdc_genesis_pool_contract = SnowGenesisRewardPool[-1]
+    os.environ["GENESIS_POOL"] = usdc_genesis_pool_contract.address
     return usdc_genesis_pool_contract
 
 
-def deploy_cro_genesis_pool():
-    if len(SnowCroGenesisRewardPool) <= 0:
-        main_token = os.environ.get("MAIN_TOKEN")
-        deposit_fee = 100
-        pool_start_time = start_time
-        deposit_token = "0x5C7F8A570d578ED84E63fdFA7b1eE72dEae1AE23"
-        cro_genesis_pool_contract = SnowCroGenesisRewardPool.deploy(
-            main_token,
-            pool_start_time,
-            dao_fund,
-            deposit_fee,
-            deposit_token,
-            {"from": deployer_account},
-            publish_source=publish_source,
-        )
-        append_new_line(
-            ".env", "export CRO_GENESIS_POOL=" + cro_genesis_pool_contract.address
-        )
-    cro_genesis_pool_contract = SnowCroGenesisRewardPool[-1]
-    os.environ["CRO_GENESIS_POOL"] = cro_genesis_pool_contract.address
-    return cro_genesis_pool_contract
+# def deploy_cro_genesis_pool():
+#     if len(SnowCroGenesisRewardPool) <= 0:
+#         main_token = os.environ.get("MAIN_TOKEN")
+#         deposit_fee = 100
+#         pool_start_time = start_time
+#         deposit_token = "0x5C7F8A570d578ED84E63fdFA7b1eE72dEae1AE23"
+#         cro_genesis_pool_contract = SnowCroGenesisRewardPool.deploy(
+#             main_token,
+#             pool_start_time,
+#             dao_fund,
+#             deposit_fee,
+#             deposit_token,
+#             {"from": deployer_account},
+#             publish_source=publish_source,
+#         )
+#         append_new_line(
+#             ".env", "export CRO_GENESIS_POOL=" + cro_genesis_pool_contract.address
+#         )
+#     cro_genesis_pool_contract = SnowCroGenesisRewardPool[-1]
+#     os.environ["CRO_GENESIS_POOL"] = cro_genesis_pool_contract.address
+#     return cro_genesis_pool_contract
 
 
-def deploy_btc_genesis_pool():
-    if len(SnowBtcGenesisRewardPool) <= 0:
-        main_token = os.environ.get("MAIN_TOKEN")
-        deposit_fee = 100
-        pool_start_time = start_time
-        deposit_token = "0x062E66477Faf219F25D27dCED647BF57C3107d52"
-        btc_genesis_pool_contract = SnowBtcGenesisRewardPool.deploy(
-            main_token,
-            pool_start_time,
-            dao_fund,
-            deposit_fee,
-            deposit_token,
-            {"from": deployer_account},
-            publish_source=publish_source,
-        )
-        append_new_line(
-            ".env", "export BTC_GENESIS_POOL=" + btc_genesis_pool_contract.address
-        )
-    btc_genesis_pool_contract = SnowBtcGenesisRewardPool[-1]
-    os.environ["BTC_GENESIS_POOL"] = btc_genesis_pool_contract.address
-    return btc_genesis_pool_contract
+# def deploy_btc_genesis_pool():
+#     if len(SnowBtcGenesisRewardPool) <= 0:
+#         main_token = os.environ.get("MAIN_TOKEN")
+#         deposit_fee = 100
+#         pool_start_time = start_time
+#         deposit_token = "0x062E66477Faf219F25D27dCED647BF57C3107d52"
+#         btc_genesis_pool_contract = SnowBtcGenesisRewardPool.deploy(
+#             main_token,
+#             pool_start_time,
+#             dao_fund,
+#             deposit_fee,
+#             deposit_token,
+#             {"from": deployer_account},
+#             publish_source=publish_source,
+#         )
+#         append_new_line(
+#             ".env", "export BTC_GENESIS_POOL=" + btc_genesis_pool_contract.address
+#         )
+#     btc_genesis_pool_contract = SnowBtcGenesisRewardPool[-1]
+#     os.environ["BTC_GENESIS_POOL"] = btc_genesis_pool_contract.address
+#     return btc_genesis_pool_contract
 
 
-def deploy_eth_genesis_pool():
-    if len(SnowEthGenesisRewardPool) <= 0:
-        main_token = os.environ.get("MAIN_TOKEN")
-        deposit_fee = 100
-        pool_start_time = start_time
-        deposit_token = "0xe44Fd7fCb2b1581822D0c862B68222998a0c299a"
-        eth_genesis_pool_contract = SnowEthGenesisRewardPool.deploy(
-            main_token,
-            pool_start_time,
-            dao_fund,
-            deposit_fee,
-            deposit_token,
-            {"from": deployer_account},
-            publish_source=publish_source,
-        )
-        append_new_line(
-            ".env", "export ETH_GENESIS_POOL=" + eth_genesis_pool_contract.address
-        )
-    eth_genesis_pool_contract = SnowEthGenesisRewardPool[-1]
-    os.environ["ETH_GENESIS_POOL"] = eth_genesis_pool_contract.address
-    return eth_genesis_pool_contract
+# def deploy_eth_genesis_pool():
+#     if len(SnowEthGenesisRewardPool) <= 0:
+#         main_token = os.environ.get("MAIN_TOKEN")
+#         deposit_fee = 100
+#         pool_start_time = start_time
+#         deposit_token = "0xe44Fd7fCb2b1581822D0c862B68222998a0c299a"
+#         eth_genesis_pool_contract = SnowEthGenesisRewardPool.deploy(
+#             main_token,
+#             pool_start_time,
+#             dao_fund,
+#             deposit_fee,
+#             deposit_token,
+#             {"from": deployer_account},
+#             publish_source=publish_source,
+#         )
+#         append_new_line(
+#             ".env", "export ETH_GENESIS_POOL=" + eth_genesis_pool_contract.address
+#         )
+#     eth_genesis_pool_contract = SnowEthGenesisRewardPool[-1]
+#     os.environ["ETH_GENESIS_POOL"] = eth_genesis_pool_contract.address
+#     return eth_genesis_pool_contract
 
 
-def deploy_dai_genesis_pool():
-    if len(SnowDaiGenesisRewardPool) <= 0:
-        main_token = os.environ.get("MAIN_TOKEN")
-        deposit_fee = 100
-        pool_start_time = start_time
-        deposit_token = "0xF2001B145b43032AAF5Ee2884e456CCd805F677D"
-        dai_genesis_pool_contract = SnowDaiGenesisRewardPool.deploy(
-            main_token,
-            pool_start_time,
-            dao_fund,
-            deposit_fee,
-            deposit_token,
-            {"from": deployer_account},
-            publish_source=publish_source,
-        )
-        append_new_line(
-            ".env", "export DAI_GENESIS_POOL=" + dai_genesis_pool_contract.address
-        )
-    dai_genesis_pool_contract = SnowDaiGenesisRewardPool[-1]
-    os.environ["DAI_GENESIS_POOL"] = dai_genesis_pool_contract.address
-    return dai_genesis_pool_contract
+# def deploy_dai_genesis_pool():
+#     if len(SnowDaiGenesisRewardPool) <= 0:
+#         main_token = os.environ.get("MAIN_TOKEN")
+#         deposit_fee = 100
+#         pool_start_time = start_time
+#         deposit_token = "0xF2001B145b43032AAF5Ee2884e456CCd805F677D"
+#         dai_genesis_pool_contract = SnowDaiGenesisRewardPool.deploy(
+#             main_token,
+#             pool_start_time,
+#             dao_fund,
+#             deposit_fee,
+#             deposit_token,
+#             {"from": deployer_account},
+#             publish_source=publish_source,
+#         )
+#         append_new_line(
+#             ".env", "export DAI_GENESIS_POOL=" + dai_genesis_pool_contract.address
+#         )
+#     dai_genesis_pool_contract = SnowDaiGenesisRewardPool[-1]
+#     os.environ["DAI_GENESIS_POOL"] = dai_genesis_pool_contract.address
+#     return dai_genesis_pool_contract
 
 
-def deploy_usdt_genesis_pool():
-    if len(SnowUsdtGenesisRewardPool) <= 0:
-        main_token = os.environ.get("MAIN_TOKEN")
-        deposit_fee = 100
-        pool_start_time = start_time
-        deposit_token = "0x66e428c3f67a68878562e79A0234c1F83c208770"
-        usdt_genesis_pool_contract = SnowUsdtGenesisRewardPool.deploy(
-            main_token,
-            pool_start_time,
-            dao_fund,
-            deposit_fee,
-            deposit_token,
-            {"from": deployer_account},
-            publish_source=publish_source,
-        )
-        append_new_line(
-            ".env", "export USDT_GENESIS_POOL=" + usdt_genesis_pool_contract.address
-        )
-    usdt_genesis_pool_contract = SnowUsdtGenesisRewardPool[-1]
-    os.environ["USDT_GENESIS_POOL"] = usdt_genesis_pool_contract.address
-    return usdt_genesis_pool_contract
+# def deploy_usdt_genesis_pool():
+#     if len(SnowUsdtGenesisRewardPool) <= 0:
+#         main_token = os.environ.get("MAIN_TOKEN")
+#         deposit_fee = 100
+#         pool_start_time = start_time
+#         deposit_token = "0x66e428c3f67a68878562e79A0234c1F83c208770"
+#         usdt_genesis_pool_contract = SnowUsdtGenesisRewardPool.deploy(
+#             main_token,
+#             pool_start_time,
+#             dao_fund,
+#             deposit_fee,
+#             deposit_token,
+#             {"from": deployer_account},
+#             publish_source=publish_source,
+#         )
+#         append_new_line(
+#             ".env", "export USDT_GENESIS_POOL=" + usdt_genesis_pool_contract.address
+#         )
+#     usdt_genesis_pool_contract = SnowUsdtGenesisRewardPool[-1]
+#     os.environ["USDT_GENESIS_POOL"] = usdt_genesis_pool_contract.address
+#     return usdt_genesis_pool_contract
 
 
-def deploy_snowusdclp_genesis_pool():
-    if len(SnowSnowUsdcLpGenesisRewardPool) <= 0:
-        main_token = os.environ.get("MAIN_TOKEN")
-        deposit_fee = 100
-        pool_start_time = start_time
-        deposit_token = os.environ.get("MAIN_TOKEN_LP")
-        snowusdclp_genesis_pool_contract = SnowSnowUsdcLpGenesisRewardPool.deploy(
-            main_token,
-            pool_start_time,
-            dao_fund,
-            deposit_fee,
-            deposit_token,
-            {"from": deployer_account},
-            publish_source=publish_source,
-        )
-        append_new_line(
-            ".env",
-            "export SNOWUSDC_GENESIS_POOL=" + snowusdclp_genesis_pool_contract.address,
-        )
-    snowusdclp_genesis_pool_contract = SnowSnowUsdcLpGenesisRewardPool[-1]
-    os.environ["SNOWUSDC_GENESIS_POOL"] = snowusdclp_genesis_pool_contract.address
-    return snowusdclp_genesis_pool_contract
+# def deploy_snowusdclp_genesis_pool():
+#     if len(SnowSnowUsdcLpGenesisRewardPool) <= 0:
+#         main_token = os.environ.get("MAIN_TOKEN")
+#         deposit_fee = 100
+#         pool_start_time = start_time
+#         deposit_token = os.environ.get("MAIN_TOKEN_LP")
+#         snowusdclp_genesis_pool_contract = SnowSnowUsdcLpGenesisRewardPool.deploy(
+#             main_token,
+#             pool_start_time,
+#             dao_fund,
+#             deposit_fee,
+#             deposit_token,
+#             {"from": deployer_account},
+#             publish_source=publish_source,
+#         )
+#         append_new_line(
+#             ".env",
+#             "export SNOWUSDC_GENESIS_POOL=" + snowusdclp_genesis_pool_contract.address,
+#         )
+#     snowusdclp_genesis_pool_contract = SnowSnowUsdcLpGenesisRewardPool[-1]
+#     os.environ["SNOWUSDC_GENESIS_POOL"] = snowusdclp_genesis_pool_contract.address
+#     return snowusdclp_genesis_pool_contract
 
 
 def deploy_sbond_reward_pool():
@@ -618,13 +618,13 @@ def main():
     deploy_bonus_reward_pool()
     deploy_main_token_node()
     deploy_share_token_node()
-    deploy_usdc_genesis_pool()
-    deploy_cro_genesis_pool()
-    deploy_usdt_genesis_pool()
-    deploy_dai_genesis_pool()
-    deploy_eth_genesis_pool()
-    deploy_btc_genesis_pool()
-    deploy_snowusdclp_genesis_pool()
+    deploy_genesis_pool()
+    # deploy_cro_genesis_pool()
+    # deploy_usdt_genesis_pool()
+    # deploy_dai_genesis_pool()
+    # deploy_eth_genesis_pool()
+    # deploy_btc_genesis_pool()
+    # deploy_snowusdclp_genesis_pool()
     deploy_sbond_reward_pool()
     deploy_liquidity_fund()
 

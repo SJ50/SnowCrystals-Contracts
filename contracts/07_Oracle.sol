@@ -39,8 +39,7 @@ contract Oracle is Epoch {
         uint256 _period,
         uint256 _startTime,
         address _dollar
-    ) public Epoch(_period, _startTime, 0) {
-        setCaller(_dollar);
+    ) public Epoch(_period, _startTime, 0, _dollar) {
         dollar = address(_dollar);
         pair = _pair;
         token0 = pair.token0();

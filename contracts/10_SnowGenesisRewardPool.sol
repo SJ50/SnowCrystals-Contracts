@@ -4,10 +4,11 @@ pragma solidity 0.6.12;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 // Note that this pool has no minter key of SNOW (rewards).
 // Instead, the governance will call SNOW distributeReward method and send reward to this pool at the beginning.
-contract SnowUsdcGenesisRewardPool {
+contract SnowGenesisRewardPool is Ownable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -51,7 +52,7 @@ contract SnowUsdcGenesisRewardPool {
 
     uint256 public snowPerSecond;
     uint256 public runningTime = 48 hours;
-    uint256 public constant TOTAL_REWARDS = 1200 ether;
+    uint256 public constant TOTAL_REWARDS = 10000 ether;
 
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
@@ -328,7 +329,7 @@ contract SnowUsdcGenesisRewardPool {
         uint256 amount,
         address to
     ) external onlyOperator {
-        if (block.timestamp < poolEndTime + 30 days) {
+        if (block.timestamp < poolEndTime + 90 days) {
             // do not allow to drain core token (SNOW or lps) if less than 30 days after pool ends
             require(IERC20(_token) != snow, "snow");
             uint256 length = poolInfo.length;
