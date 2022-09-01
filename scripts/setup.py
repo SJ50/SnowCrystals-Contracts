@@ -88,6 +88,9 @@ peg_token = os.environ.get("PEG_TOKEN")
 main_token = os.environ.get("MAIN_TOKEN")
 treasury = os.environ.get("TREASURY")
 oracle = os.environ.get("ORACLE")
+main_token_oracle = os.environ.get("MAINTOKEN_ORACLE")
+share_token_oracle = os.environ.get("SHARETOKEN_ORACLE")
+datafeed_oracle = os.environ.get("DATAFEED_ORACLE")
 bond_token = os.environ.get("BOND_TOKEN")
 share_token = os.environ.get("SHARE_TOKEN")
 boardroom = os.environ.get("BOARDROOM")
@@ -114,7 +117,7 @@ def setup_main_token():
     main_token_contract = Contract(main_token)
     print("Maintoken setting oracle...")
     set_oracle_tx = main_token_contract.setOracle(
-        oracle,
+        main_token_oracle,
         {"from": deployer_account},
     )
     set_oracle_tx.wait(1)
@@ -169,7 +172,7 @@ def setup_main_token():
         "Maintoken exclude sbond_bonus transfering and claiming maintoken to & from sbond_bonus free..."
     )
     set_tax_fund_exclude_from_fee_tx = main_token_contract.setExcludeBothDirectionsFee(
-        liquidity_fund,
+        sbond_reward_pool,
         True,
         {"from": deployer_account},
     )
@@ -182,7 +185,7 @@ def setup_main_token():
     )
     set_tax_fund_tx.wait(1)
 
-    for X in range(3):
+    for X in range(2):
         burn_rate = 800  # 800
         print(f"Maintoken set burntier rates for index {X} to {burn_rate}")
         set_burn_tier_twap = main_token_contract.setBurnTiersRate(
@@ -191,7 +194,7 @@ def setup_main_token():
             {"from": deployer_account},
         )
         set_burn_tier_twap.wait(1)
-    for X in range(3, 8):
+    for X in range(2, 7):
         burn_rate = 400  # 400
         print(f"Maintoken set burntier rates for index {X} to {burn_rate}")
         set_burn_tier_twap = main_token_contract.setBurnTiersRate(
@@ -201,7 +204,7 @@ def setup_main_token():
         )
         set_burn_tier_twap.wait(1)
 
-    for X in range(3):
+    for X in range(2):
         tax_rate = 800  # 800
         print(f"Maintoken set burntier rates for index {X} to {tax_rate}")
         set_tax_tier_rate = main_token_contract.setTaxTiersRate(
@@ -210,7 +213,7 @@ def setup_main_token():
             {"from": deployer_account},
         )
         set_tax_tier_rate.wait(1)
-    for X in range(3, 8):
+    for X in range(2, 7):
         tax_rate = 400  # 400
         print(f"Maintoken set burntier rates for index {X} to {tax_rate}")
         set_tax_tier_rate = main_token_contract.setTaxTiersRate(
@@ -311,6 +314,30 @@ def setup_oracle():
     transfer_operator_tx.wait(1)
 
 
+def setup_MainToken_oracle():
+    oracle_contract = Contract(main_token_oracle)
+    print("Updating MainToken Oracle...")
+    update_tx = oracle_contract.update({"from": deployer_account})
+    update_tx.wait(1)
+    print("setting Treasury as Oracle operator...")
+    transfer_operator_tx = oracle_contract.transferOperator(
+        treasury, {"from": deployer_account}
+    )
+    transfer_operator_tx.wait(1)
+
+
+def setup_ShareToken_oracle():
+    oracle_contract = Contract(share_token_oracle)
+    print("Updating ShareToken Oracle...")
+    update_tx = oracle_contract.update({"from": deployer_account})
+    update_tx.wait(1)
+    print("setting Treasury as Oracle operator...")
+    transfer_operator_tx = oracle_contract.transferOperator(
+        treasury, {"from": deployer_account}
+    )
+    transfer_operator_tx.wait(1)
+
+
 def setup_treasury():
     treasury_contract = Contract(treasury)
     print("Initializing treasury...")
@@ -357,11 +384,11 @@ def setup_treasury():
 
 def setup_genesis_pool():
     genesis_pool_contract = Contract(genesis_pool)
-    wBTC = "0xB5294e29A6e4CbFbb269a6240313b593190ef544"
-    wETH = "0x1e8B3db284ef89E19Bc8edb7A0c5246be288a824"
-    wCRO = "0x6a3173618859C7cd40fAF6921b5E9eB6A76f1fD4"
-    wDAI = "0x4b23dfd7e925b543E4354A5D4eA8AD47699e6f12"
-    wUSDT = "0xf1852356be8aD76dAAD31acEB55018Dd87961109"
+    wBTC = config["networks"][network.show_active()]["wbtc_token"]
+    wETH = config["networks"][network.show_active()]["weth_token"]
+    wCRO = config["networks"][network.show_active()]["wcro_token"]
+    wDAI = config["networks"][network.show_active()]["dai_token"]
+    wUSDT = config["networks"][network.show_active()]["usdt_token"]
     print("adding wBTC to genesis pool...")
     set_wBTC_genesis_pool_tx = genesis_pool_contract.add(
         1, wBTC, False, 0, {"from": deployer_account}

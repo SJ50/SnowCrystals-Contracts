@@ -19,17 +19,14 @@ from brownie import (
     Glcr,
     Boardroom,
     Oracle,
+    MainTokenOracle,
+    ShareTokenOracle,
+    DataFeedOracle,
     Treasury,
     ShareTokenRewardPool,
     MainTokenNode,
     ShareTokenNode,
     SnowGenesisRewardPool,
-    SnowBtcGenesisRewardPool,
-    SnowEthGenesisRewardPool,
-    SnowUsdtGenesisRewardPool,
-    SnowDaiGenesisRewardPool,
-    SnowCroGenesisRewardPool,
-    SnowSnowUsdcLpGenesisRewardPool,
     SnowNodeBonusRewardPool,
     SnowSbondBonusRewardPool,
     LiquidityFund,
@@ -282,7 +279,7 @@ def deploy_oracle_contract():
         main_token_lp = os.environ.get("MAIN_TOKEN_LP")
         main_token = os.environ.get("MAIN_TOKEN")
         print("deploying oracle!")
-        main_token_oracle = Oracle.deploy(
+        oracle = Oracle.deploy(
             main_token_lp,
             oracle_period,
             start_time,
@@ -290,10 +287,65 @@ def deploy_oracle_contract():
             {"from": deployer_account},
             publish_source=publish_source,
         )
-        append_new_line(".env", "export ORACLE=" + main_token_oracle.address)
-    main_token_oracle = Oracle[-1]
-    os.environ["ORACLE"] = main_token_oracle.address
+        append_new_line(".env", "export ORACLE=" + oracle.address)
+    oracle = Oracle[-1]
+    os.environ["ORACLE"] = oracle.address
+    return oracle
+
+
+def deploy_MainToken_oracle_contract():
+    if len(MainTokenOracle) <= 0:
+        main_token_lp = os.environ.get("MAIN_TOKEN_LP")
+        main_token = os.environ.get("MAIN_TOKEN")
+        print("deploying maintoken oracle!")
+        main_token_oracle = MainTokenOracle.deploy(
+            main_token_lp,
+            oracle_period,
+            start_time,
+            main_token,
+            {"from": deployer_account},
+            publish_source=publish_source,
+        )
+        append_new_line(".env", "export MAINTOKEN_ORACLE=" + main_token_oracle.address)
+    main_token_oracle = MainTokenOracle[-1]
+    os.environ["MAINTOKEN_ORACLE"] = main_token_oracle.address
     return main_token_oracle
+
+
+def deploy_ShareToken_oracle_contract():
+    if len(ShareTokenOracle) <= 0:
+        share_token_lp = os.environ.get("SHARE_TOKEN_LP")
+        share_token = os.environ.get("SHARE_TOKEN")
+        print("deploying maintoken oracle!")
+        share_token_oracle = ShareTokenOracle.deploy(
+            share_token_lp,
+            oracle_period,
+            start_time,
+            share_token,
+            {"from": deployer_account},
+            publish_source=publish_source,
+        )
+        append_new_line(
+            ".env", "export SHARETOKEN_ORACLE=" + share_token_oracle.address
+        )
+    share_token_oracle = ShareTokenOracle[-1]
+    os.environ["SHARETOKEN_ORACLE"] = share_token_oracle.address
+    return share_token_oracle
+
+
+def deploy_DataFeed_oracle_contract():
+    if len(DataFeedOracle) <= 0:
+        datafeed = config["networks"][network.show_active()]["band_datafeed"]
+        print("deploying maintoken oracle!")
+        datafeed_oracle = DataFeedOracle.deploy(
+            datafeed,
+            {"from": deployer_account},
+            publish_source=publish_source,
+        )
+        append_new_line(".env", "export DATAFEED_ORACLE=" + datafeed_oracle.address)
+    datafeed_oracle = DataFeedOracle[-1]
+    os.environ["DATAFEED_ORACLE"] = datafeed_oracle.address
+    return datafeed_oracle
 
 
 def deploy_treasury_contract():
@@ -614,6 +666,9 @@ def main():
     deploy_boardroom()
     deploy_treasury_contract()
     deploy_oracle_contract()
+    deploy_MainToken_oracle_contract()
+    deploy_ShareToken_oracle_contract()
+    deploy_DataFeed_oracle_contract()
     deploy_share_token_reward_pool()
     deploy_bonus_reward_pool()
     deploy_main_token_node()
@@ -632,7 +687,7 @@ def main():
 # import json
 # slp_abi=open("./interfaces/lp_abi.json")
 # abi_lp=json.load(slp_abi)
-# slp=Contract.from_abi("slp","0xAEB669993330A39fAeA5B188b22354894c9b65ee",abi_lp)
+# slp=Contract.from_abi("slp","0xE2A1207be9E08E212d0EFe0Fc628A4367361A065",abi_lp)
 # token_abi=open("./interfaces/token_abi.json")
 # abi_token=json.load(token_abi)
 # musdc=Contract.from_abi("token","0x39D8fa99c9964D456b9fbD5e059e63442F314121",abi_token)

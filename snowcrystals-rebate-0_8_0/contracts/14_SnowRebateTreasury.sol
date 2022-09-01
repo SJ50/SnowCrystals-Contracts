@@ -8,7 +8,7 @@ import "../interfaces/IOracle.sol";
 import "../interfaces/ITreasury.sol";
 import "../interfaces/lib/IUniswapV2Pair.sol";
 
-contract RebateTreasury is Ownable {
+contract SnowRebateTreasury is Ownable {
     struct Asset {
         bool isAdded;
         uint256 multiplier;
@@ -25,8 +25,8 @@ contract RebateTreasury is Ownable {
         uint256 lastClaimed;
     }
 
-    IERC20 public Tomb;
-    IOracle public TombOracle;
+    IERC20 public Snow;
+    IOracle public SnowOracle;
     ITreasury public Treasury;
 
     mapping(address => Asset) public assets;
@@ -37,7 +37,7 @@ contract RebateTreasury is Ownable {
     uint256 public secondaryThreshold = 70 * 1e4;
     uint256 public secondaryFactor = 15 * 1e4;
 
-    uint256 public bondVesting = 7 days;
+    uint256 public bondVesting = 3 days;
     uint256 public totalVested = 0;
 
     uint256 public lastBuyback;
@@ -81,12 +81,12 @@ contract RebateTreasury is Ownable {
     // Initialize parameters
 
     constructor(
-        address tomb,
-        address tombOracle,
+        address snow,
+        address snowOracle,
         address treasury
     ) {
-        Tomb = IERC20(tomb);
-        TombOracle = IOracle(tombOracle);
+        Snow = IERC20(snow);
+        SnowOracle = IOracle(snowOracle);
         Treasury = ITreasury(treasury);
         daoOperator = msg.sender;
     }
@@ -99,29 +99,29 @@ contract RebateTreasury is Ownable {
         daoOperator = operator;
     }
 
-    // Bond asset for discounted Tomb at bond rate
+    // Bond asset for discounted Snow at bond rate
 
     function bond(address token, uint256 amount) external onlyAsset(token) {
         require(amount > 0, "RebateTreasury: invalid bond amount");
-        uint256 tombAmount = getTombReturn(token, amount);
+        uint256 snowAmount = getSnowReturn(token, amount);
         require(
-            tombAmount <= Tomb.balanceOf(address(this)) - totalVested,
-            "RebateTreasury: insufficient tomb balance"
+            snowAmount <= Snow.balanceOf(address(this)) - totalVested,
+            "RebateTreasury: insufficient snow balance"
         );
 
         IERC20(token).transferFrom(msg.sender, address(this), amount);
         _claimVested(msg.sender);
 
         VestingSchedule storage schedule = vesting[msg.sender];
-        schedule.amount = schedule.amount - schedule.claimed + tombAmount;
+        schedule.amount = schedule.amount - schedule.claimed + snowAmount;
         schedule.period = bondVesting;
         schedule.end = block.timestamp + bondVesting;
         schedule.claimed = 0;
         schedule.lastClaimed = block.timestamp;
-        totalVested += tombAmount;
+        totalVested += snowAmount;
     }
 
-    // Claim available Tomb rewards from bonding
+    // Claim available Snow rewards from bonding
 
     function claimRewards() external {
         _claimVested(msg.sender);
@@ -133,19 +133,19 @@ contract RebateTreasury is Ownable {
      * --------------------
      */
 
-    // Set Tomb token
+    // Set Snow token
 
-    function setTomb(address tomb) external onlyOwner {
-        Tomb = IERC20(tomb);
+    function setSnow(address snow) external onlyOwner {
+        Snow = IERC20(snow);
     }
 
-    // Set Tomb oracle
+    // Set Snow oracle
 
-    function setTombOracle(address oracle) external onlyOwner {
-        TombOracle = IOracle(oracle);
+    function setSnowOracle(address oracle) external onlyOwner {
+        SnowOracle = IOracle(oracle);
     }
 
-    // Set Tomb treasury
+    // Set Snow treasury
 
     function setTreasury(address treasury) external onlyOwner {
         Treasury = ITreasury(treasury);
@@ -226,7 +226,7 @@ contract RebateTreasury is Ownable {
             ? schedule.end
             : block.timestamp;
         totalVested -= claimable;
-        Tomb.transfer(account, claimable);
+        Snow.transfer(account, claimable);
     }
 
     /*
@@ -235,15 +235,15 @@ contract RebateTreasury is Ownable {
      * --------------
      */
 
-    // Calculate Tomb return of bonding amount of token
+    // Calculate Snow return of bonding amount of token
 
-    function getTombReturn(address token, uint256 amount)
+    function getSnowReturn(address token, uint256 amount)
         public
         view
         onlyAsset(token)
         returns (uint256)
     {
-        uint256 tombPrice = getTombPrice();
+        uint256 snowPrice = getSnowPrice();
         uint256 tokenPrice = getTokenPrice(token);
         uint256 bondPremium = getBondPremium();
         uint256 decimalsMultiplier = token == USDC ? 1e12 : 1;
@@ -254,33 +254,33 @@ contract RebateTreasury is Ownable {
                 (bondPremium + DENOMINATOR) *
                 assets[token].multiplier) /
             (DENOMINATOR * DENOMINATOR) /
-            tombPrice;
+            snowPrice;
     }
 
     // Calculate premium for bonds based on bonding curve
 
     function getBondPremium() public view returns (uint256) {
-        uint256 tombPrice = getTombPrice();
-        if (tombPrice < 1e18) return 0;
+        uint256 snowPrice = getSnowPrice();
+        if (snowPrice < 1e18) return 0;
 
-        uint256 tombPremium = (tombPrice * DENOMINATOR) / 1e18 - DENOMINATOR;
-        if (tombPremium < bondThreshold) return 0;
-        if (tombPremium <= secondaryThreshold) {
-            return ((tombPremium - bondThreshold) * bondFactor) / DENOMINATOR;
+        uint256 snowPremium = (snowPrice * DENOMINATOR) / 1e18 - DENOMINATOR;
+        if (snowPremium < bondThreshold) return 0;
+        if (snowPremium <= secondaryThreshold) {
+            return ((snowPremium - bondThreshold) * bondFactor) / DENOMINATOR;
         } else {
             uint256 primaryPremium = ((secondaryThreshold - bondThreshold) *
                 bondFactor) / DENOMINATOR;
             return
                 primaryPremium +
-                ((tombPremium - secondaryThreshold) * secondaryFactor) /
+                ((snowPremium - secondaryThreshold) * secondaryFactor) /
                 DENOMINATOR;
         }
     }
 
-    // Get TOMB price from Oracle
+    // Get SNOW price from Oracle
 
-    function getTombPrice() public view returns (uint256) {
-        return TombOracle.consult(address(Tomb), 1e18);
+    function getSnowPrice() public view returns (uint256) {
+        return SnowOracle.consult(address(Snow), 1e18);
     }
 
     // Get token price from Oracle
@@ -320,8 +320,8 @@ contract RebateTreasury is Ownable {
         }
     }
 
-    // Get claimable vested Tomb for account
-    function claimableTomb(address account) external view returns (uint256) {
+    // Get claimable vested Snow for account
+    function claimableSnow(address account) external view returns (uint256) {
         VestingSchedule memory schedule = vesting[account];
         if (
             block.timestamp <= schedule.lastClaimed ||

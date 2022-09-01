@@ -127,7 +127,7 @@ contract LiquidityFund is ContractGuard {
         bonusBalance = bonusBalance.add(bonusAmount);
 
         if (liquidityBalance >= numTokensSellToAddToLiquidity) {
-            uint256 daoLiqudityBalance = liquidityBalance.mul(800).div(1000);
+            uint256 daoLiqudityBalance = liquidityBalance.mul(700).div(1000);
             uint256 devLiqudityBalance = liquidityBalance.sub(
                 daoLiqudityBalance
             );

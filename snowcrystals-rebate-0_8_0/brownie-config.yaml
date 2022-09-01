@@ -47,17 +47,27 @@ networks:
     lending_pool_addresses_provider: ""
     varify: False
   cronos-test:
-    weth_token: "0x6a3173618859C7cd40fAF6921b5E9eB6A76f1fD4"
+    wcro_token: "0x6a3173618859C7cd40fAF6921b5E9eB6A76f1fD4"
     router_address: "0xc4e4DdB7a71fCF9Bb7356461Ca75124aA9910653"
     factory_address: "0xBa5FBa5A47f7711C3bF4ca035224c95B3cE2E9C9"
     usdc_token: "0x39D8fa99c9964D456b9fbD5e059e63442F314121"
+    wbtc_token: "0xB5294e29A6e4CbFbb269a6240313b593190ef544"
+    weth_token: "0x1e8B3db284ef89E19Bc8edb7A0c5246be288a824"
+    dai_token: "0x4b23dfd7e925b543E4354A5D4eA8AD47699e6f12"
+    usdt_token: "0xf1852356be8aD76dAAD31acEB55018Dd87961109"
+    band_datafeed: "0xD0b2234eB9431e850a814bCdcBCB18C1093F986B"
     varify: False
   cronos:
     wcro_token: "0x5C7F8A570d578ED84E63fdFA7b1eE72dEae1AE23"
     router_address: "0x145677FC4d9b8F19B5D56d1820c48e0443049a30"
     factory_address: "0xd590cC180601AEcD6eeADD9B7f2B7611519544f4"
     usdc_token: "0xc21223249CA28397B4B6541dfFaEcC539BfF0c59"
-    varify: True
+    weth_token: "0xe44Fd7fCb2b1581822D0c862B68222998a0c299a"
+    wbtc_token: "0x062E66477Faf219F25D27dCED647BF57C3107d52"
+    dai_token: "0xF2001B145b43032AAF5Ee2884e456CCd805F677D"
+    usdt_token: "0x66e428c3f67a68878562e79A0234c1F83c208770"
+    band_datafeed: "0xDA7a001b254CD22e46d3eAB04d937489c93174C3"
+    varify: False
   development:
     # weth_token: ""
     varify: False
