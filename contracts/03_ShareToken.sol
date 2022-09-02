@@ -20,12 +20,11 @@ contract Glcr is ERC20, ERC20Burnable, Operator {
         - 21500 GLCRs allocated to farming pools
         - Airdop 250 GLCRs allocated to DAO wallet
         - Allocate 6750 GLCRs to DAO wallet for linear vesting
-        - Airdrop 180 GLCRs to Dev wallet
-        - Allocate 3320 GLCRs to Dev wallet for linear vesting
+        - Allocate 3499 GLCRs to Dev wallet for linear vesting
     */
     uint256 public constant FARMING_POOL_REWARD_ALLOCATION = 21500 ether;
     uint256 public constant COMMUNITY_FUND_POOL_ALLOCATION = 6750 ether;
-    uint256 public constant DEV_FUND_POOL_ALLOCATION = 3320 ether;
+    uint256 public constant DEV_FUND_POOL_ALLOCATION = 3499 ether;
 
     uint256 public constant VESTING_DURATION = 52 weeks;
     uint256 public startTime;
@@ -51,7 +50,6 @@ contract Glcr is ERC20, ERC20Burnable, Operator {
     ) public ERC20(name_, symbol_) {
         _mint(msg.sender, 1 ether); // mint 1 Share for initial pools deployment and Boardroom initialization
         _mint(_daoFund, 250 ether); // Airdop 250 GLCR allocated to DAO wallet
-        _mint(_devFund, 180 ether); // Airdop 180 GLCR allocated to DEVwallet
 
         startTime = _startTime;
         endTime = startTime + VESTING_DURATION;
