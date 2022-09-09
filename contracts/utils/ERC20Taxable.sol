@@ -4,6 +4,7 @@ pragma solidity 0.6.12;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol";
 import "../access/Operator.sol";
+import "../../interfaces/ITaxOffice.sol";
 
 contract ERC20Taxable is ERC20Burnable, Operator {
     using SafeMath for uint256;

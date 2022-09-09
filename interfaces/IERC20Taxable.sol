@@ -2,7 +2,11 @@
 
 pragma solidity 0.6.12;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 interface IERC20Taxable is IERC20 {
+    function burn(uint256 amount) external;
+
     function taxOffice() external returns (address);
 
     function staticTaxRate() external returns (uint256);

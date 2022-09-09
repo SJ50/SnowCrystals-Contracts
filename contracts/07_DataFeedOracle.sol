@@ -7,6 +7,7 @@ import "../interfaces/IStdReference.sol";
 import "../interfaces/IERC20Metadata.sol";
 
 contract DataFeedOracle {
+    using SafeMath for uint256;
     IStdReference ref;
 
     uint256 public price;

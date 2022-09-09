@@ -119,7 +119,9 @@ contract Snow is ERC20Taxable {
 
         uint256 _taxAmount = _amount.sub(_burnAmount);
         _approve(_sender, taxOffice, _taxAmount);
+        //Use inherited function to transferFrom.
         ERC20.transferFrom(_sender, taxOffice, _taxAmount);
         ITaxOffice(taxOffice).handleMainTokenTax(_taxAmount);
+        ITaxOffice(taxOffice).updateMainTokenPrice();
     }
 }

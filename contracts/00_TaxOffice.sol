@@ -2,7 +2,6 @@
 
 pragma solidity 0.6.12;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
@@ -11,6 +10,7 @@ import "./access/Operator.sol";
 import "../interfaces/IOracle.sol";
 import "../interfaces/IUniswapV2Router.sol";
 import "../interfaces/IERC20Taxable.sol";
+import "../interfaces/IBonusRewards.sol";
 
 // Part: TaxOffice
 
@@ -130,9 +130,9 @@ contract TaxOffice is Operator {
         }
     }
 
-    function _updateMainTokenPrice() external {
-        if (mainTokenOracle != address(0))
-            try IOracle(mainTokenOracle).update() {} catch {}
+    function updateMainTokenPrice() external {
+        if (address(mainTokenOracle) != address(0))
+            try mainTokenOracle.update() {} catch {}
     }
 
     function assertMonotonicity(uint256[] memory _monotonicArray)
@@ -309,9 +309,9 @@ contract TaxOfficeV2 is TaxOffice {
         address _shareToken,
         address _mainTokenOracle,
         address _pegToken,
-        address _router,
+        address _router
     ) public TaxOffice(_mainToken, _shareToken, _mainTokenOracle) {
-        pegtoken = IERC20(_pegToken);
+        pegToken = IERC20(_pegToken);
         router = _router;
     }
 
@@ -327,26 +327,29 @@ contract TaxOfficeV2 is TaxOffice {
         );
 
         //Check _amount of share token to be handled is available.
-        uint256 tokenBalance = IERC20(shareToken).balanceOf(address(this));
+        uint256 tokenBalance = shareToken.balanceOf(address(this));
         if (_amount > tokenBalance) {
             _amount = tokenBalance;
         }
         // generate the uniswap pair path of token -> weth
-        address[] memory shareToMainTokenSwapPath = new address[](3);
-        path[0] = address(shareToken);
-        path[1] = address(pegToken);
-        path[2] = address(mainToken); 
+        address[] memory shareToMainTokenSwapPath;
+        shareToMainTokenSwapPath = new address[](3);
+        shareToMainTokenSwapPath[0] = address(shareToken);
+        shareToMainTokenSwapPath[1] = address(pegToken);
+        shareToMainTokenSwapPath[2] = address(mainToken);
         //Swap from share token to main token.
-        IERC20(shareToken).safeIncreaseAllowance(router, _amount);
-        uint256 mainTokenAmount;
-        mainTokenAmount = IUniswapV2Router(router).swapExactTokensForTokens(
-            _amount,
-            0,
-            shareToMainTokenSwapPath,
-            address(this),
-            block.timestamp + 40
-        );
-        IERC20(mainToken).burn(mainTokenAmount);
+        IERC20(address(shareToken)).safeIncreaseAllowance(router, _amount);
+
+        uint256[] memory amounts = IUniswapV2Router(router)
+            .swapExactTokensForTokens(
+                _amount,
+                0,
+                shareToMainTokenSwapPath,
+                address(this),
+                block.timestamp + 40
+            );
+        uint256 mainTokenAmounts = amounts[2];
+        mainToken.burn(mainTokenAmounts);
 
         //Emit event.
         emit HandledShareTokenTax(_amount);
@@ -356,13 +359,23 @@ contract TaxOfficeV2 is TaxOffice {
 contract TaxOfficeV3 is TaxOfficeV2 {
     using SafeERC20 for IERC20;
 
+    address private dev;
+    address public sBondBonusRewardPool;
+    address public nodeBonusRewardPool;
+    address public treasury;
+    uint256 public devBalance;
+    uint256 public bonusBalance;
+
     constructor(
         address _mainToken,
         address _shareToken,
         address _mainTokenOracle,
         address _pegToken,
-        address _router
-    )public
+        address _router,
+        address _treasury,
+        address _dev
+    )
+        public
         TaxOfficeV2(
             _mainToken,
             _shareToken,
@@ -370,7 +383,18 @@ contract TaxOfficeV3 is TaxOfficeV2 {
             _pegToken,
             _router
         )
-    {}
+    {
+        treasury = _treasury;
+        dev = _dev;
+    }
+
+    modifier onlyOperatorOrTreasury() {
+        require(
+            operator() == msg.sender || treasury == msg.sender,
+            "caller is not the operator or the treasury"
+        );
+        _;
+    }
 
     function handleMainTokenTax(uint256 _amount) external override {
         require(
@@ -387,15 +411,16 @@ contract TaxOfficeV3 is TaxOfficeV2 {
 
     function swapTokensForOther(uint256 _tokenAmount)
         private
-        returns (uint256){
+        returns (uint256)
+    {
         // generate the uniswap pair path of token -> weth
         address[] memory path = new address[](2);
         path[0] = address(mainToken);
         path[1] = address(pegToken);
 
         // approve token transfer to cover all possible scenarios
-        _approveTokenIfNeeded(mainToken, address(uniswapV2Router));
-        _approveTokenIfNeeded(pegToken, address(uniswapV2Router));
+        _approveTokenIfNeeded(address(mainToken), router);
+        _approveTokenIfNeeded(address(pegToken), router);
 
         IUniswapV2Router(router).swapExactTokensForTokens(
             _tokenAmount,
@@ -404,7 +429,7 @@ contract TaxOfficeV3 is TaxOfficeV2 {
             dev,
             block.timestamp + 40
         );
-        return IERC20(pegToken).balanceOf(address(this));
+        return pegToken.balanceOf(address(this));
     }
 
     function _approveTokenIfNeeded(address token, address router) private {
@@ -425,8 +450,8 @@ contract TaxOfficeV3 is TaxOfficeV2 {
             uint256 half = bonusBalance.div(2);
             uint256 otherHalf = bonusBalance.sub(half);
 
-            IERC20(mainToken).transfer(sBondBonusRewardPool, half);
-            IERC20(mainToken).transfer(nodeBonusRewardPool, otherHalf);
+            mainToken.transfer(sBondBonusRewardPool, half);
+            mainToken.transfer(nodeBonusRewardPool, otherHalf);
 
             _restartBonusRewardPool(
                 half,
@@ -439,7 +464,7 @@ contract TaxOfficeV3 is TaxOfficeV2 {
                 _nextEpochPoint
             );
         } else {
-            IERC20(mainToken).transfer(nodeBonusRewardPool, bonusBalance);
+            mainToken.transfer(nodeBonusRewardPool, bonusBalance);
 
             _restartBonusRewardPool(
                 bonusBalance,
@@ -461,12 +486,16 @@ contract TaxOfficeV3 is TaxOfficeV2 {
     }
 
     function _swapAndWithdraw(uint256 _amount) private {
-       uint256 = _withdrawAmount;
-       _withdrawAmount=swapTokensForOther(_amount);
-       withdraw(address(pegToken),dev,_withdrawAmount); 
+        uint256 _withdrawAmount;
+        _withdrawAmount = swapTokensForOther(_amount);
+        uint256 tokenBalance = pegToken.balanceOf(address(this));
+        if (_withdrawAmount > tokenBalance) {
+            _withdrawAmount = tokenBalance;
+        }
+        pegToken.transfer(dev, _withdrawAmount);
     }
 
-   function setDevWallet(address _dev) external onlyOperator {
+    function setDev(address _dev) external onlyOperator {
         dev = _dev;
     }
 
@@ -483,6 +512,4 @@ contract TaxOfficeV3 is TaxOfficeV2 {
     {
         nodeBonusRewardPool = _nodeBonusRewardPool;
     }
-
-  
 }
