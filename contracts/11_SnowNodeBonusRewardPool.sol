@@ -109,34 +109,42 @@ contract SnowNodeBonusRewardPool {
     {
         require(block.timestamp > poolEndTime, "last reward pool running");
         massUpdatePools();
-        TOTAL_REWARDS = _amount;
-        poolStartTime = block.timestamp;
-        poolEndTime = _nextEpochPoint;
-        if (block.timestamp > _nextEpochPoint) {
-            poolStartTime = poolEndTime;
-            snowPerSecond = 0;
-            return;
+        uint256 _totalPendingSnow = getTotalPendingSnow();
+        uint256 _snowBalance = snow.balanceOf(address(this));
+        if (_snowBalance.sub(_totalPendingSnow) > 0) {
+            TOTAL_REWARDS = _snowBalance.sub(_totalPendingSnow);
+            poolStartTime = block.timestamp;
+            poolEndTime = _nextEpochPoint;
+            if (block.timestamp > _nextEpochPoint) {
+                poolStartTime = poolEndTime;
+                snowPerSecond = 0;
+                return;
+            }
+            uint256 _runningTime = poolEndTime.sub(poolStartTime);
+            snowPerSecond = TOTAL_REWARDS.div(_runningTime);
+            massUpdatePools();
         }
-        uint256 _runningTime = poolEndTime.sub(poolStartTime);
-        snowPerSecond = TOTAL_REWARDS.div(_runningTime);
-        massUpdatePools();
     }
 
-    function manuallyRestartPool(uint256 _amount, uint256 _secondToEndTime)
+    function manuallyRestartPool(uint256 _amount, uint256 _secondsToEndTime)
         external
         onlyOperator
     {
         massUpdatePools();
-        TOTAL_REWARDS = _amount;
-        poolStartTime = block.timestamp;
-        if (_secondToEndTime == 0) {
-            poolEndTime = block.timestamp;
-            snowPerSecond = 0;
-            return;
+        uint256 _totalPendingSnow = getTotalPendingSnow();
+        uint256 _snowBalance = snow.balanceOf(address(this));
+        if (_snowBalance.sub(_totalPendingSnow) > 0) {
+            TOTAL_REWARDS = _snowBalance.sub(_totalPendingSnow);
+            poolStartTime = block.timestamp;
+            if (_secondsToEndTime == 0) {
+                poolEndTime = block.timestamp;
+                snowPerSecond = 0;
+                return;
+            }
+            poolEndTime = block.timestamp.add(_secondsToEndTime);
+            snowPerSecond = TOTAL_REWARDS.div(_secondsToEndTime);
+            massUpdatePools();
         }
-        poolEndTime = block.timestamp.add(_secondToEndTime);
-        snowPerSecond = TOTAL_REWARDS.div(_secondToEndTime);
-        massUpdatePools();
     }
 
     function checkPoolDuplicate(IERC20 _token) internal view {
@@ -293,8 +301,44 @@ contract SnowNodeBonusRewardPool {
                 ++nodeUsersIndex
             ) {
                 address _userAddress = nodeUsers[nodeUsersIndex];
-                UserInfo storage _user = userInfo[_pid][_userAddress];
-                _totalAmount = _totalAmount + _user.amount;
+                UserInfo storage user = userInfo[_pid][_userAddress];
+                _totalAmount = _totalAmount.add(user.amount);
+            }
+        }
+        return _totalAmount;
+    }
+
+    function getTotalPendingSnow() public view returns (uint256) {
+        uint256 _totalAmount = 0;
+        for (uint256 _pid = 0; _pid < poolInfo.length; ++_pid) {
+            for (
+                uint256 nodeUsersIndex = 0;
+                nodeUsersIndex < nodeUsers.length;
+                ++nodeUsersIndex
+            ) {
+                address _userAddress = nodeUsers[nodeUsersIndex];
+                PoolInfo storage pool = poolInfo[_pid];
+                UserInfo storage user = userInfo[_pid][_userAddress];
+                uint256 accSnowPerShare = pool.accSnowPerShare;
+                uint256 tokenSupply = getTotalDepositAmount();
+                if (block.timestamp > pool.lastRewardTime && tokenSupply != 0) {
+                    uint256 _generatedReward = getGeneratedReward(
+                        pool.lastRewardTime,
+                        block.timestamp
+                    );
+                    uint256 _snowReward = _generatedReward
+                        .mul(pool.allocPoint)
+                        .div(totalAllocPoint);
+                    accSnowPerShare = accSnowPerShare.add(
+                        _snowReward.mul(1e18).div(tokenSupply)
+                    );
+                }
+                uint256 _userPendingReward = user
+                    .amount
+                    .mul(accSnowPerShare)
+                    .div(1e18)
+                    .sub(user.rewardDebt);
+                _totalAmount = _totalAmount.add(_userPendingReward);
             }
         }
         return _totalAmount;

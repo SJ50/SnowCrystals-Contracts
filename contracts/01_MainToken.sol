@@ -16,7 +16,7 @@ import "../interfaces/ILiquidityFund.sol";
     https://snowcrystals.finance
 */
 
-contract Snow is ERC20, ERC20Burnable, Operator {
+contract SnowOld is ERC20, ERC20Burnable, Operator {
     using SafeMath for uint256;
     using SafeMath8 for uint8;
 
@@ -24,7 +24,7 @@ contract Snow is ERC20, ERC20Burnable, Operator {
     // Initial distribution for the first 48h genesis pools
     uint256 public constant INITIAL_GENESIS_POOL_DISTRIBUTION = 24000 ether;
     // Distribution for airdrops wallet
-    uint256 public constant INITIAL_DAO_WALLET_DISTRIBUTION = 1008 ether;
+    uint256 public constant INITIAL_DAO_WALLET_DISTRIBUTION = 1000 ether;
 
     // Have the rewards been distributed to the pools
     bool public rewardPoolDistributed = false;
@@ -76,8 +76,8 @@ contract Snow is ERC20, ERC20Burnable, Operator {
         addLiquidityEnabled = true;
         taxFund = _taxFund;
 
-        // Mints 10 SNOW to contract creator for initial pool setup
-        _mint(msg.sender, 10 ether);
+        // Mints 1000 SNOW to contract creator for initial pool setup
+        _mint(msg.sender, 1000 ether);
     }
 
     /**
