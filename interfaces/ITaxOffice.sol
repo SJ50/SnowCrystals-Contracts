@@ -26,4 +26,12 @@ interface ITaxOffice {
     function taxDiscount(address _sender, address _recipient)
         external
         returns (uint256);
+
+    function updateMainTokenPrice() external;
+
+    function sendToBonus(
+        uint256 _price,
+        uint256 _ceilingPrice,
+        uint256 _nextEpochPoint
+    ) external;
 }

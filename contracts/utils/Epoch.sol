@@ -13,21 +13,18 @@ contract Epoch is Operator {
     uint256 private startTime;
     uint256 private lastEpochTime;
     uint256 private epoch;
-    address public caller;
 
     /* ========== CONSTRUCTOR ========== */
 
     constructor(
         uint256 _period,
         uint256 _startTime,
-        uint256 _startEpoch,
-        address _caller
+        uint256 _startEpoch
     ) public {
         period = _period;
         startTime = _startTime;
         epoch = _startEpoch;
         lastEpochTime = startTime.sub(period);
-        caller = _caller;
     }
 
     /* ========== Modifier ========== */
@@ -42,10 +39,8 @@ contract Epoch is Operator {
         uint256 _nextEpochPoint = nextEpochPoint();
         if (now < _nextEpochPoint) {
             require(
-                msg.sender == operator() ||
-                    msg.sender == owner() ||
-                    msg.sender == caller,
-                "Epoch: only operator allowed for pre-epoch"
+                msg.sender == operator() || msg.sender == owner(),
+                "Epoch: only operator or owner allowed for pre-epoch"
             );
             _;
         } else {
