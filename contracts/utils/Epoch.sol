@@ -90,8 +90,4 @@ contract Epoch is Operator {
     function setEpoch(uint256 _epoch) external onlyOperator {
         epoch = _epoch;
     }
-
-    function setCaller(address _caller) external onlyOperator {
-        caller = _caller;
-    }
 }
