@@ -105,7 +105,7 @@ contract TaxOffice is Operator {
     Uses the oracle to fire the 'consult' method and get the price of tomb.
     */
     function getMainTokenPrice() public view returns (uint256) {
-        try mainTokenOracle.consult(address(mainToken), 1e17) returns (
+        try mainTokenOracle.consult(address(mainToken), 1e18) returns (
             uint144 _price
         ) {
             return uint256(_price);
@@ -118,7 +118,7 @@ contract TaxOffice is Operator {
     Uses the oracle to fire the 'twap' method and get the price of tomb.
     */
     function getMainTokenUpdatedPrice() public view returns (uint256) {
-        try mainTokenOracle.twap(address(mainToken), 1e17) returns (
+        try mainTokenOracle.twap(address(mainToken), 1e18) returns (
             uint144 _price
         ) {
             return uint256(_price);
