@@ -16,7 +16,7 @@ contract SnowSbondBonusRewardPool {
     address public daoFund;
     uint256 public depositFee;
     address public glcrRewardPool;
-    address public liqudityFund;
+    address public taxOffice;
 
     // Info of each user.
     struct UserInfo {
@@ -100,17 +100,17 @@ contract SnowSbondBonusRewardPool {
         _;
     }
 
-    modifier onlyOperatorOrLiqudityFund() {
+    modifier onlyOperatorOrTaxOffice() {
         require(
-            operator == msg.sender || liqudityFund == msg.sender,
-            "SnowSbondReward: caller is not the operator or the LiqudityFund"
+            operator == msg.sender || taxOffice == msg.sender,
+            "SnowSbondReward: caller is not the operator or the taxOffice"
         );
         _;
     }
 
     function restartPool(uint256 _amount, uint256 _nextEpochPoint)
         external
-        onlyOperatorOrLiqudityFund
+        onlyOperatorOrTaxOffice
     {
         require(
             block.timestamp > poolEndTime,
@@ -367,8 +367,8 @@ contract SnowSbondBonusRewardPool {
         glcrRewardPool = _glcrRewardPool;
     }
 
-    function setLiqudityFund(address _liqudityFund) external onlyOperator {
-        liqudityFund = _liqudityFund;
+    function setTaxOffice(address _taxOffice) external onlyOperator {
+        taxOffice = _taxOffice;
     }
 
     function governanceRecoverUnsupported(

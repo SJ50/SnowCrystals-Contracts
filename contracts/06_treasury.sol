@@ -2,24 +2,23 @@
 
 pragma solidity 0.6.12;
 
-import "@openzeppelin/contracts/math/Math.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/math/Math.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-import "./lib/Babylonian.sol";
 import "./access/Operator.sol";
 import "./utils/ContractGuard.sol";
 
-import "../interfaces/IBasisAsset.sol";
 import "../interfaces/IOracle.sol";
 import "../interfaces/IBoardroom.sol";
-import "../interfaces/ILiquidityFund.sol";
+import "../interfaces/IERC20Taxable.sol";
+import "../interfaces/ITaxOffice.sol";
 
 /*
     https://snowcrystals.finance
 */
-contract Treasury is ContractGuard {
+contract Treasury is ContractGuard, ReentrancyGuard {
     using SafeERC20 for IERC20;
     using Address for address;
     using SafeMath for uint256;
@@ -52,8 +51,6 @@ contract Treasury is ContractGuard {
     address public boardroom;
     address public snowOracle;
 
-    address public liquidityFund;
-
     // price
     uint256 public snowPriceOne;
     uint256 public snowPriceCeiling;
@@ -62,9 +59,6 @@ contract Treasury is ContractGuard {
 
     uint256[] public supplyTiers;
     uint256[] public maxExpansionTiers;
-    uint256 public minExpansion;
-    uint256 public fixedExpansion;
-    uint256 public expansionFactor;
 
     uint256 public maxSupplyExpansionPercent;
     uint256 public bondDepletionFloorPercent;
@@ -90,6 +84,17 @@ contract Treasury is ContractGuard {
     address private devFund;
     uint256 public devFundSharedPercent;
 
+    /* =================== Toast Finance Added variables =================== */
+
+    address public taxOffice;
+
+    address public rebateTreasury;
+    uint256 public rebateTreasurySharedPercent;
+
+    uint256 public minExpansion;
+    uint256 public fixedExpansion;
+    uint256 public expansionFactor;
+
     /* =================== Events =================== */
 
     event Initialized(address indexed executor, uint256 at);
@@ -108,6 +113,7 @@ contract Treasury is ContractGuard {
     event BoardroomFunded(uint256 timestamp, uint256 seigniorage);
     event DaoFundFunded(uint256 timestamp, uint256 seigniorage);
     event DevFundFunded(uint256 timestamp, uint256 seigniorage);
+    event RebateTreasuryFunded(uint256 timestamp, uint256 seigniorage);
 
     /* =================== Modifier =================== */
 
@@ -136,9 +142,9 @@ contract Treasury is ContractGuard {
 
     modifier checkOperator() {
         require(
-            IBasisAsset(snow).operator() == address(this) &&
-                IBasisAsset(sBond).operator() == address(this) &&
-                IBasisAsset(glcr).operator() == address(this) &&
+            IERC20Taxable(snow).operator() == address(this) &&
+                IERC20Taxable(sBond).operator() == address(this) &&
+                IERC20Taxable(glcr).operator() == address(this) &&
                 Operator(boardroom).operator() == address(this),
             "Treasury: need more permission"
         );
@@ -276,18 +282,21 @@ contract Treasury is ContractGuard {
         address _glcr,
         address _snowOracle,
         address _boardroom,
-        address _liquidityFund,
-        uint256 _startTime
+        uint256 _startTime,
+        address _taxOffice,
+        address[] memory _excludedFromTotalSupply
     ) public notInitialized {
         snow = _snow;
         sBond = _sBond;
         glcr = _glcr;
         snowOracle = _snowOracle;
         boardroom = _boardroom;
-        liquidityFund = _liquidityFund;
         startTime = _startTime;
 
-        snowPriceOne = 10**18; // This is to allow a PEG of 1 Snow per USDC
+        taxOffice = _taxOffice;
+        excludedFromTotalSupply = _excludedFromTotalSupply;
+
+        snowPriceOne = 10**17; // This is to allow a PEG of 10 Snow per USDC
         snowPriceCeiling = snowPriceOne.mul(101).div(100);
 
         // Dynamic max expansion percent
@@ -306,7 +315,7 @@ contract Treasury is ContractGuard {
         bondDepletionFloorPercent = 10000; // 100% of Bond supply for depletion floor
         seigniorageExpansionFloorPercent = 3500; // At least 35% of expansion reserved for boardroom
         maxSupplyContractionPercent = 300; // Upto 3.0% supply for contraction (to burn Snow and mint BondToken)
-        maxDebtRatioPercent = 4500; // Upto 35% supply of BOND to purchase
+        maxDebtRatioPercent = 4000; // Upto 40% supply of BOND to purchase
 
         premiumThreshold = 110;
         premiumPercent = 7000;
@@ -318,7 +327,7 @@ contract Treasury is ContractGuard {
         // set seigniorageSaved to it's balance
         seigniorageSaved = IERC20(snow).balanceOf(address(this));
 
-        minExpansion = 10000000000000000;
+        minExpansion = 10**16;
         expansionFactor = 150;
 
         initialized = true;
@@ -338,8 +347,8 @@ contract Treasury is ContractGuard {
         snowOracle = _snowOracle;
     }
 
-    function setLiquidityFund(address _liquidityFund) external onlyOperator {
-        liquidityFund = _liquidityFund;
+    function setTaxOffice(address _taxOffice) external onlyOperator {
+        taxOffice = _taxOffice;
     }
 
     function setSnowPriceCeiling(uint256 _snowPriceCeiling)
@@ -350,7 +359,7 @@ contract Treasury is ContractGuard {
             _snowPriceCeiling >= snowPriceOne &&
                 _snowPriceCeiling <= snowPriceOne.mul(120).div(100),
             "out of range"
-        ); // [$1.0, $1.2]
+        ); // [$0.1, $0.12]
         snowPriceCeiling = _snowPriceCeiling;
     }
 
@@ -480,16 +489,22 @@ contract Treasury is ContractGuard {
         address _daoFund,
         uint256 _daoFundSharedPercent,
         address _devFund,
-        uint256 _devFundSharedPercent
+        uint256 _devFundSharedPercent,
+        address _rebateTreasury,
+        uint256 _rebateTreasurySharedPercent
     ) external onlyOperator {
         require(_daoFund != address(0), "zero");
         require(_daoFundSharedPercent <= 3000, "out of range"); // <= 30%
         require(_devFund != address(0), "zero");
         require(_devFundSharedPercent <= 1000, "out of range"); // <= 10%
+        require(_rebateTreasury != address(0), "zero");
+        require(_rebateTreasurySharedPercent <= 3_000, "out of range"); // <= 50%
         daoFund = _daoFund;
         daoFundSharedPercent = _daoFundSharedPercent;
         devFund = _devFund;
         devFundSharedPercent = _devFundSharedPercent;
+        rebateTreasury = _rebateTreasury;
+        rebateTreasurySharedPercent = _rebateTreasurySharedPercent;
     }
 
     function setMaxDiscountRate(uint256 _maxDiscountRate)
@@ -570,6 +585,7 @@ contract Treasury is ContractGuard {
         onlyOneBlock
         checkCondition
         checkOperator
+        nonReentrant
     {
         require(
             _snowAmount > 0,
@@ -579,7 +595,7 @@ contract Treasury is ContractGuard {
         uint256 snowPrice = getSnowPrice();
         require(snowPrice == targetPrice, "Treasury: Snow price moved");
         require(
-            snowPrice < snowPriceOne, // price < $1
+            snowPrice < snowPriceOne, // price < $0.1
             "Treasury: snowPrice not eligible for bond purchase"
         );
 
@@ -599,8 +615,8 @@ contract Treasury is ContractGuard {
             "over max debt ratio"
         );
 
-        IBasisAsset(snow).burnFrom(msg.sender, _snowAmount);
-        IBasisAsset(sBond).mint(msg.sender, _bondAmount);
+        IERC20Taxable(snow).burnFrom(msg.sender, _snowAmount);
+        IERC20Taxable(sBond).mint(msg.sender, _bondAmount);
 
         epochSupplyContractionLeft = epochSupplyContractionLeft.sub(
             _snowAmount
@@ -615,6 +631,7 @@ contract Treasury is ContractGuard {
         onlyOneBlock
         checkCondition
         checkOperator
+        nonReentrant
     {
         require(
             _bondAmount > 0,
@@ -624,7 +641,7 @@ contract Treasury is ContractGuard {
         uint256 snowPrice = getSnowPrice();
         require(snowPrice == targetPrice, "Treasury: Snow price moved");
         require(
-            snowPrice > snowPriceCeiling, // price > $1.01
+            snowPrice > snowPriceCeiling, // price > $0.101
             "Treasury: snowPrice not eligible for bond purchase"
         );
 
@@ -641,7 +658,7 @@ contract Treasury is ContractGuard {
             Math.min(seigniorageSaved, _snowAmount)
         );
 
-        IBasisAsset(sBond).burnFrom(msg.sender, _bondAmount);
+        IERC20Taxable(sBond).burnFrom(msg.sender, _bondAmount);
         IERC20(snow).safeTransfer(msg.sender, _snowAmount);
 
         _updateSnowPrice();
@@ -650,7 +667,7 @@ contract Treasury is ContractGuard {
     }
 
     function _sendToBoardroom(uint256 _amount) internal {
-        IBasisAsset(snow).mint(address(this), _amount);
+        IERC20Taxable(snow).mint(address(this), _amount);
 
         uint256 _daoFundSharedAmount = 0;
         if (daoFundSharedPercent > 0) {
@@ -720,6 +737,7 @@ contract Treasury is ContractGuard {
         checkCondition
         checkEpoch
         checkOperator
+        nonReentrant
     {
         _updateSnowPrice();
         previousEpochSnowPrice = getSnowPrice();
@@ -731,7 +749,7 @@ contract Treasury is ContractGuard {
             );
         } else {
             if (previousEpochSnowPrice > snowPriceCeiling) {
-                // Expansion (Snow Price > 1 $USDC): there is some seigniorage to be allocated
+                // Expansion (Snow Price > 0.1 $USDC): there is some seigniorage to be allocated
                 _calculateMaxSupplyExpansionPercent(snowSupply);
                 uint256 bondSupply = IERC20(sBond).totalSupply();
                 uint256 _percentage = getExpansionPercent();
@@ -764,12 +782,12 @@ contract Treasury is ContractGuard {
                 }
                 if (_savedForBond > 0) {
                     seigniorageSaved = seigniorageSaved.add(_savedForBond);
-                    IBasisAsset(snow).mint(address(this), _savedForBond);
+                    IERC20Taxable(snow).mint(address(this), _savedForBond);
                     emit TreasuryFunded(now, _savedForBond);
                 }
             }
         }
-        ILiquidityFund(liquidityFund).sendToBonus(
+        ITaxOffice(taxOffice).sendToBonus(
             previousEpochSnowPrice,
             snowPriceCeiling,
             nextEpochPoint()
@@ -828,55 +846,27 @@ contract Treasury is ContractGuard {
     /** 
     Snow token contract governance
     **/
-
-    function snowSetBurnTiersRate(uint8 _index, uint256 _value)
-        external
-        onlyOperator
-    {
-        IBasisAsset(snow).setBurnTiersRate(_index, _value);
+    function setSnowTaxOffice(address _taxOffice) external onlyOperator {
+        IERC20Taxable(snow).setTaxOffice(_taxOffice);
     }
 
-    function snowSetExcludeBothDirectionsFee(address _account, bool _status)
-        external
-        onlyOperator
-    {
-        IBasisAsset(snow).setExcludeBothDirectionsFee(_account, _status);
+    function setGlcrTaxOffice(address _taxOffice) external onlyOperator {
+        IERC20Taxable(glcr).setTaxOffice(_taxOffice);
     }
 
-    function snowSetExcludeFromFee(address _account, bool _status)
-        external
-        onlyOperator
-    {
-        IBasisAsset(snow).setExcludeFromFee(_account, _status);
+    function snowGovernanceRecoverUnsupported(
+        IERC20 _token,
+        uint256 _amount,
+        address _to
+    ) external onlyOperator {
+        IERC20Taxable(snow).governanceRecoverUnsupported(_token, _amount, _to);
     }
 
-    function snowSetExcludeToFee(address _account, bool _status)
-        external
-        onlyOperator
-    {
-        IBasisAsset(snow).setExcludeToFee(_account, _status);
-    }
-
-    function snowSetOracle(address _oracle) external onlyOperator {
-        IBasisAsset(snow).setOracle(_oracle);
-    }
-
-    function snowSetTaxFund(address _taxFund) external onlyOperator {
-        IBasisAsset(snow).setTaxFund(_taxFund);
-    }
-
-    function snowSetTaxTiersRate(uint8 _index, uint256 _value)
-        external
-        onlyOperator
-    {
-        IBasisAsset(snow).setTaxTiersRate(_index, _value);
-    }
-
-    function snowSwitchEnableUpdatePrice() external onlyOperator {
-        IBasisAsset(snow).switchEnableUpdatePrice();
-    }
-
-    function snowToggleAddLiquidityEnabled() external onlyOperator {
-        IBasisAsset(snow).toggleAddLiquidityEnabled();
+    function glcrGovernanceRecoverUnsupported(
+        IERC20 _token,
+        uint256 _amount,
+        address _to
+    ) external onlyOperator {
+        IERC20Taxable(glcr).governanceRecoverUnsupported(_token, _amount, _to);
     }
 }

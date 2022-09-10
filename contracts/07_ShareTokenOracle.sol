@@ -18,7 +18,7 @@ contract ShareTokenOracle is Epoch {
     using SafeMath for uint144;
 
     /* ========== STATE VARIABLES ========== */
-    address public dollar;
+    address public glcr;
     uint144 public constant DECIMALS_MULTIPLER = 10**12; // USDC Decimals = 6
     // uniswap
     address public token0;
@@ -38,9 +38,9 @@ contract ShareTokenOracle is Epoch {
         IUniswapV2Pair _pair,
         uint256 _period,
         uint256 _startTime,
-        address _dollar
-    ) public Epoch(_period, _startTime, 0, _dollar) {
-        dollar = address(_dollar);
+        address _glcr
+    ) public Epoch(_period, _startTime, 0) {
+        glcr = address(_glcr);
         pair = _pair;
         token0 = pair.token0();
         token1 = pair.token1();
@@ -96,7 +96,7 @@ contract ShareTokenOracle is Epoch {
             require(_token == token1, "Oracle: INVALID_TOKEN");
             amountOut = price1Average.mul(_amountIn).decode144();
         }
-        if (_token == dollar) {
+        if (_token == glcr) {
             amountOut = uint144(amountOut.mul(DECIMALS_MULTIPLER));
         }
     }
@@ -131,7 +131,7 @@ contract ShareTokenOracle is Epoch {
                 .mul(_amountIn)
                 .decode144();
         }
-        if (_token == dollar) {
+        if (_token == glcr) {
             _amountOut = uint144(_amountOut.mul(DECIMALS_MULTIPLER));
         }
     }

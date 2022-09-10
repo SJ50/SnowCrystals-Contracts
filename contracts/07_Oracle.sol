@@ -18,7 +18,7 @@ contract Oracle is Epoch {
     using SafeMath for uint144;
 
     /* ========== STATE VARIABLES ========== */
-    address public dollar;
+    address public snow;
     uint144 public constant DECIMALS_MULTIPLER = 10**12; // USDC Decimals = 6
     // uniswap
     address public token0;
@@ -38,9 +38,9 @@ contract Oracle is Epoch {
         IUniswapV2Pair _pair,
         uint256 _period,
         uint256 _startTime,
-        address _dollar
-    ) public Epoch(_period, _startTime, 0, _dollar) {
-        dollar = address(_dollar);
+        address _snow
+    ) public Epoch(_period, _startTime, 0) {
+        snow = address(_snow);
         pair = _pair;
         token0 = pair.token0();
         token1 = pair.token1();
@@ -96,7 +96,7 @@ contract Oracle is Epoch {
             require(_token == token1, "Oracle: INVALID_TOKEN");
             amountOut = price1Average.mul(_amountIn).decode144();
         }
-        if (_token == dollar) {
+        if (_token == snow) {
             amountOut = uint144(amountOut.mul(DECIMALS_MULTIPLER));
         }
     }
@@ -131,7 +131,7 @@ contract Oracle is Epoch {
                 .mul(_amountIn)
                 .decode144();
         }
-        if (_token == dollar) {
+        if (_token == snow) {
             _amountOut = uint144(_amountOut.mul(DECIMALS_MULTIPLER));
         }
     }

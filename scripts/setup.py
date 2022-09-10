@@ -31,7 +31,6 @@ from brownie import (
     SnowSnowUsdcLpGenesisRewardPool,
     SnowNodeBonusRewardPool,
     SnowSbondBonusRewardPool,
-    LiquidityFund,
 )
 from brownie.network.gas.strategies import GasNowStrategy
 
@@ -101,132 +100,28 @@ node_bonus_reward_pool = os.environ.get("NODE_BONUS_REWARD_POOL")
 main_token_node = os.environ.get("MAIN_TOKEN_NODE")
 share_token_node = os.environ.get("SHARE_TOKEN_NODE")
 genesis_pool = os.environ.get("GENESIS_POOL")
-# cro_genesis_pool = os.environ.get("CRO_GENESIS_POOL")
-# btc_genesis_pool = os.environ.get("BTC_GENESIS_POOL")
-# eth_genesis_pool = os.environ.get("ETH_GENESIS_POOL")
-# dai_genesis_pool = os.environ.get("DAI_GENESIS_POOL")
-# usdt_genesis_pool = os.environ.get("USDT_GENESIS_POOL")
-# snowusdclp_genesis_pool = os.environ.get("SNOWUSDC_GENESIS_POOL")
 sbond_reward_pool = os.environ.get("SBOND_REWARD_POOL")
-liquidity_fund = os.environ.get("LIQUIDITY_FUND")
-rebate_treasury = os.environ.get("REBATE_TREASURY")
+tax_office = os.environ.get("TAX_OFFICE")
+wrapped_router = os.environ.get("WRAPPED_ROUTER")
+# liquidity_fund = os.environ.get("LIQUIDITY_FUND")
+snow_rebate_treasury = os.environ.get("SNOW_REBATE_TREASURY")
+glcr_rebate_treasury = os.environ.get("GLCR_REBATE_TREASURY")
 zap = os.environ.get("ZAP")
 
 
 def setup_main_token():
     main_token_contract = Contract(main_token)
-    print("Maintoken setting oracle...")
-    set_oracle_tx = main_token_contract.setOracle(
-        main_token_oracle,
+
+    print("Maintoken setting taxoffice...")
+    set_maintoken_taxoffice_tx = main_token_contract.setTaxOffice(
+        tax_office,
         {"from": deployer_account},
     )
-    set_oracle_tx.wait(1)
-
-    print("Maintoken exclude maintokenLP from tax to make buying token tax free...")
-    set_lp_exclude_from_fee_tx = main_token_contract.setExcludeFromFee(
-        main_token_lp,
-        True,
-        {"from": deployer_account},
-    )
-    set_lp_exclude_from_fee_tx.wait(1)
-
-    print(
-        "Maintoken exclude zap from tax to make zap maintoken properly taxed and pegtoken free..."
-    )
-    set_zap_exclude_from_fee_tx = main_token_contract.setExcludeFromFee(
-        zap,
-        True,
-        {"from": deployer_account},
-    )
-    set_zap_exclude_from_fee_tx.wait(1)
-
-    print(
-        "Maintoken exclude Treasury from tax to minting and transfering maintoken to Boardroom free..."
-    )
-    set_treasury_exclude_from_fee_tx = main_token_contract.setExcludeBothDirectionsFee(
-        treasury,
-        True,
-        {"from": deployer_account},
-    )
-    set_treasury_exclude_from_fee_tx.wait(1)
-
-    print("Maintoken exclude TaxFund transfering maintoken to TaxFund free...")
-    set_tax_fund_exclude_from_fee_tx = main_token_contract.setExcludeBothDirectionsFee(
-        liquidity_fund,
-        True,
-        {"from": deployer_account},
-    )
-    set_tax_fund_exclude_from_fee_tx.wait(1)
-
-    print(
-        "Maintoken exclude node_bonus transfering and claiming maintoken to & from node_bonus free..."
-    )
-    set_tax_fund_exclude_from_fee_tx = main_token_contract.setExcludeBothDirectionsFee(
-        node_bonus_reward_pool,
-        True,
-        {"from": deployer_account},
-    )
-    set_tax_fund_exclude_from_fee_tx.wait(1)
-
-    print(
-        "Maintoken exclude sbond_bonus transfering and claiming maintoken to & from sbond_bonus free..."
-    )
-    set_tax_fund_exclude_from_fee_tx = main_token_contract.setExcludeBothDirectionsFee(
-        sbond_reward_pool,
-        True,
-        {"from": deployer_account},
-    )
-    set_tax_fund_exclude_from_fee_tx.wait(1)
-
-    print("set TaxFund...")
-    set_tax_fund_tx = main_token_contract.setTaxFund(
-        liquidity_fund,
-        {"from": deployer_account},
-    )
-    set_tax_fund_tx.wait(1)
-
-    for X in range(2):
-        burn_rate = 800  # 800
-        print(f"Maintoken set burntier rates for index {X} to {burn_rate}")
-        set_burn_tier_twap = main_token_contract.setBurnTiersRate(
-            X,
-            burn_rate,
-            {"from": deployer_account},
-        )
-        set_burn_tier_twap.wait(1)
-    for X in range(2, 7):
-        burn_rate = 400  # 400
-        print(f"Maintoken set burntier rates for index {X} to {burn_rate}")
-        set_burn_tier_twap = main_token_contract.setBurnTiersRate(
-            X,
-            burn_rate,
-            {"from": deployer_account},
-        )
-        set_burn_tier_twap.wait(1)
-
-    for X in range(2):
-        tax_rate = 800  # 800
-        print(f"Maintoken set burntier rates for index {X} to {tax_rate}")
-        set_tax_tier_rate = main_token_contract.setTaxTiersRate(
-            X,
-            tax_rate,
-            {"from": deployer_account},
-        )
-        set_tax_tier_rate.wait(1)
-    for X in range(2, 7):
-        tax_rate = 400  # 400
-        print(f"Maintoken set burntier rates for index {X} to {tax_rate}")
-        set_tax_tier_rate = main_token_contract.setTaxTiersRate(
-            X,
-            tax_rate,
-            {"from": deployer_account},
-        )
-        set_tax_tier_rate.wait(1)
+    set_maintoken_taxoffice_tx.wait(1)
 
     print("Distribute rewards...")
     set_distribute_reward_tx = main_token_contract.distributeReward(
-        [genesis_pool],
-        [10000],
+        genesis_pool,
         dao_fund,
         {"from": deployer_account},
     )
@@ -246,6 +141,187 @@ def setup_main_token():
     set_renounceOwnership_tx.wait(1)
 
 
+def set_taxoffice_maintoken():
+    tax_office_contract = Contract(tax_office)
+    print("Maintoken set static tax rate...")
+    set_static_tax_rate_tx = tax_office_contract.setMainTokenStaticTaxRate(
+        2500,
+        {"from": deployer_account},
+    )
+    set_static_tax_rate_tx.wait(1)
+
+    print("maintoken exclude Boardroom from tax to claim maintoken free...")
+    set_boardroom_whitelist_type_tx = tax_office_contract.setMainTokenWhitelistType(
+        boardroom,
+        3,
+        {"from": deployer_account},
+    )
+    set_boardroom_whitelist_type_tx.wait(1)
+
+    print("Maintoken exclude maintokenLP from tax to make buying token tax free...")
+    set_lp_whitelist_type_tx = tax_office_contract.setMainTokenWhitelistType(
+        main_token_lp,
+        1,
+        {"from": deployer_account},
+    )
+    set_lp_whitelist_type_tx.wait(1)
+
+    print(
+        "Maintoken exclude zap from tax to make zap maintoken properly taxed and pegtoken free..."
+    )
+    set_zap_whitelist_type_tx = tax_office_contract.setMainTokenWhitelistType(
+        zap,
+        1,
+        {"from": deployer_account},
+    )
+    set_zap_whitelist_type_tx.wait(1)
+
+    # print(
+    #     "Maintoken exclude Treasury from tax to minting and transfering maintoken to Boardroom free..."
+    # )
+    # set_treasury_whitelist_type_tx = tax_office_contract.setMainTokenWhitelistType(
+    #     treasury,
+    #     3,
+    #     {"from": deployer_account},
+    # )
+    # set_treasury_whitelist_type_tx.wait(1)
+
+    print(
+        "Maintoken exclude TaxOffice transfering maintoken to and from TaxOffice free..."
+    )
+    set_tax_office_whitelist_type_tx = tax_office_contract.setMainTokenWhitelistType(
+        tax_office,
+        3,
+        {"from": deployer_account},
+    )
+    set_tax_office_whitelist_type_tx.wait(1)
+
+    print(
+        "Maintoken exclude wrapped_router transfering maintoken to and from wrapped_router free..."
+    )
+    set_wrapped_router_whitelist_type_tx = (
+        tax_office_contract.setMainTokenWhitelistType(
+            wrapped_router,
+            3,
+            {"from": deployer_account},
+        )
+    )
+
+    set_wrapped_router_whitelist_type_tx.wait(1)
+
+    print(
+        "Maintoken exclude node_bonus transfering and claiming maintoken to & from node_bonus free..."
+    )
+    set_node_bonus_reward_pool_whitelist_type_tx = (
+        tax_office_contract.setMainTokenWhitelistType(
+            node_bonus_reward_pool,
+            3,
+            {"from": deployer_account},
+        )
+    )
+    set_node_bonus_reward_pool_whitelist_type_tx.wait(1)
+
+    print(
+        "Maintoken exclude sbond_bonus transfering and claiming maintoken to & from sbond_bonus free..."
+    )
+    set_sbond_reward_pool_whitelist_type_tx = (
+        tax_office_contract.setMainTokenWhitelistType(
+            sbond_reward_pool,
+            3,
+            {"from": deployer_account},
+        )
+    )
+    set_sbond_reward_pool_whitelist_type_tx.wait(1)
+
+    print("Maintoken exclude rebate_treasury claiming maintoken free...")
+    set_rebate_treasury_whitelist_type_tx = (
+        tax_office_contract.setMainTokenWhitelistType(
+            snow_rebate_treasury,
+            3,
+            {"from": deployer_account},
+        )
+    )
+    set_rebate_treasury_whitelist_type_tx.wait(1)
+
+
+def set_taxoffice_sharetoken():
+    tax_office_contract = Contract(tax_office)
+    print("sharetoken set static tax rate...")
+    set_static_tax_rate_tx = tax_office_contract.setShareTokenStaticTaxRate(
+        2500,
+        {"from": deployer_account},
+    )
+    set_static_tax_rate_tx.wait(1)
+
+    print("sharetoken exclude Boardroom to deposit and withdraw sharetoken free...")
+    set_boardroom_whitelist_type_tx = tax_office_contract.setShareTokenWhitelistType(
+        boardroom,
+        3,
+        {"from": deployer_account},
+    )
+    set_boardroom_whitelist_type_tx.wait(1)
+
+    print("sharetoken exclude sharetokenLP from tax to make buying token tax free...")
+    set_lp_whitelist_type_tx = tax_office_contract.setShareTokenWhitelistType(
+        share_token_lp,
+        1,
+        {"from": deployer_account},
+    )
+    set_lp_whitelist_type_tx.wait(1)
+
+    print(
+        "sharetoken exclude zap from tax to make zap sharetoken properly taxed and pegtoken free..."
+    )
+    set_zap_whitelist_type_tx = tax_office_contract.setShareTokenWhitelistType(
+        zap,
+        1,
+        {"from": deployer_account},
+    )
+    set_zap_whitelist_type_tx.wait(1)
+
+    # print(
+    #     "sharetoken exclude Treasury from tax to minting and transfering sharetoken to Boardroom free..."
+    # )
+    # set_treasury_whitelist_type_tx = tax_office_contract.setShareTokenWhitelistType(
+    #     treasury,
+    #     3,
+    #     {"from": deployer_account},
+    # )
+    # set_treasury_whitelist_type_tx.wait(1)
+
+    print(
+        "sharetoken exclude TaxOffice transfering sharetoken to and from TaxOffice free..."
+    )
+    set_tax_office_whitelist_type_tx = tax_office_contract.setShareTokenWhitelistType(
+        tax_office,
+        3,
+        {"from": deployer_account},
+    )
+    set_tax_office_whitelist_type_tx.wait(1)
+
+    print(
+        "sharetoken exclude wrapped_router transfering sharetoken to and from wrapped_router free..."
+    )
+    set_wrapped_router_whitelist_type_tx = (
+        tax_office_contract.setShareTokenWhitelistType(
+            wrapped_router,
+            3,
+            {"from": deployer_account},
+        )
+    )
+    set_wrapped_router_whitelist_type_tx.wait(1)
+
+    print("sharetoken exclude rebate_treasury claiming sharetoken free...")
+    set_rebate_treasury_whitelist_type_tx = (
+        tax_office_contract.setShareTokenWhitelistType(
+            glcr_rebate_treasury,
+            3,
+            {"from": deployer_account},
+        )
+    )
+    set_rebate_treasury_whitelist_type_tx.wait(1)
+
+
 def setup_bond_token():
     bond_token_contract = Contract(bond_token)
     print("Bondtoken setting treasury as operator...")
@@ -263,12 +339,20 @@ def setup_bond_token():
 
 def setup_share_token():
     share_token_contract = Contract(share_token)
+    print("Sharetoken setting taxoffice...")
+    set_sharetoken_taxoffice_tx = share_token_contract.setTaxOffice(
+        tax_office,
+        {"from": deployer_account},
+    )
+    set_sharetoken_taxoffice_tx.wait(1)
+
     print("mint farmingfund")
     mint_farming_fund_tx = share_token_contract.distributeReward(
         share_reward_pool,
         {"from": deployer_account},
     )
     mint_farming_fund_tx.wait(1)
+
     print("Sharetoken setting treasury as operator...")
     set_operator_tx = share_token_contract.transferOperator(
         treasury,
@@ -319,9 +403,9 @@ def setup_MainToken_oracle():
     print("Updating MainToken Oracle...")
     update_tx = oracle_contract.update({"from": deployer_account})
     update_tx.wait(1)
-    print("setting Treasury as Oracle operator...")
+    print("setting TaxOffice as Oracle operator...")
     transfer_operator_tx = oracle_contract.transferOperator(
-        treasury, {"from": deployer_account}
+        tax_office, {"from": deployer_account}
     )
     transfer_operator_tx.wait(1)
 
@@ -331,11 +415,11 @@ def setup_ShareToken_oracle():
     print("Updating ShareToken Oracle...")
     update_tx = oracle_contract.update({"from": deployer_account})
     update_tx.wait(1)
-    print("setting Treasury as Oracle operator...")
-    transfer_operator_tx = oracle_contract.transferOperator(
-        treasury, {"from": deployer_account}
-    )
-    transfer_operator_tx.wait(1)
+    # print("setting Treasury as Oracle operator...")
+    # transfer_operator_tx = oracle_contract.transferOperator(
+    #     treasury, {"from": deployer_account}
+    # )
+    # transfer_operator_tx.wait(1)
 
 
 def setup_treasury():
@@ -347,16 +431,19 @@ def setup_treasury():
         share_token,
         oracle,
         boardroom,
-        liquidity_fund,
         start_time,
+        tax_office,
+        [genesis_pool],
         {"from": deployer_account},
     )
     intialized_tx.wait(1)
     set_extra_fund_tx = treasury_contract.setExtraFunds(
         dao_fund,
-        3000,
+        800,
         dev_fund,
-        500,
+        800,
+        snow_rebate_treasury,
+        2200,
         {"from": deployer_account},
     )
     set_extra_fund_tx.wait(1)
@@ -439,8 +526,8 @@ def setup_node_bonus_reward_pool():
     )
     node_bonus_reward_pool_set_node_tx.wait(1)
     node_bonus_reward_pool_set_liqudity_fund_tx = (
-        node_bonus_reward_pool_contract.setLiqudityFund(
-            liquidity_fund, {"from": deployer_account}
+        node_bonus_reward_pool_contract.setTaxOffice(
+            tax_office, {"from": deployer_account}
         )
     )
     node_bonus_reward_pool_set_liqudity_fund_tx.wait(1)
@@ -455,8 +542,8 @@ def setup_sbond_bonus_reward_pool():
     )
     sbond_bonus_reward_pool_set_share_token_reward_pool_tx.wait(1)
     sbond_bonus_reward_pool_set_liqudity_fund_tx = (
-        sbond_bonus_reward_pool_contract.setLiqudityFund(
-            liquidity_fund, {"from": deployer_account}
+        sbond_bonus_reward_pool_contract.setTaxOffice(
+            tax_office, {"from": deployer_account}
         )
     )
     sbond_bonus_reward_pool_set_liqudity_fund_tx.wait(1)
@@ -480,6 +567,9 @@ def get_all_info():
     print(f"BOARDROOM contract is {boardroom}")
     print(f"TREASURY contract is {treasury}")
     print(f"ORACLE contract is {oracle}")
+    print(f"MainToken_ORACKE contract is {main_token_oracle}")
+    print(f"ShareToken_ORACKE contract is {share_token_oracle}")
+    print(f"DataFeed ORACLE contract is {datafeed_oracle}")
     print(f"MAIN TOKEN LIQUIDITY POOL contract is {main_token_lp}")
     print(f"SHARE TOKEN LIQUIDITY POOL contract is {share_token_lp}")
     print(f"SHARE TOKEN REWARD contract is {share_reward_pool}")
@@ -487,16 +577,13 @@ def get_all_info():
     print(f"MAIN TOKEN NODE contract is {main_token_node}")
     print(f"SHARE TOKEN NODE contract is {share_token_node}")
     print(f"GENESIS POOL contract is {genesis_pool}")
-    # print(f"SNOW-USDC-LP GENESIS POOl contract is {snowusdclp_genesis_pool}")
-    # print(f"CRO GENESIS POOL contract is {cro_genesis_pool}")
-    # print(f"USDT GENESIS POOL contract is {usdt_genesis_pool}")
-    # print(f"DAI GENESIS POOL contract is {dai_genesis_pool}")
-    # print(f"ETH GENESIS POOL contract is {eth_genesis_pool}")
-    # print(f"BTC GENESIS POOL contract is {btc_genesis_pool}")
     print(f"SBOND BONUS POOL contract is {sbond_reward_pool}")
-    print(f"LIQUIDITY FUND contract is {liquidity_fund}")
+    # print(f"LIQUIDITY FUND contract is {liquidity_fund}")
     print(f"ZAP contract is {zap}")
-    print(f"REBATE TREASURY contract is {rebate_treasury}")
+    print(f"TAX OFFICE contract is {tax_office}")
+    print(f"WRAPPED ROUTER contract is {wrapped_router}")
+    print(f"SNOW REBATE TREASURY contract is {snow_rebate_treasury}")
+    print(f"GLCR REBATE TREASURY contract is {glcr_rebate_treasury}")
     print(f"contract deployer account {deployer_account}")
     print(f"dao account {dao_fund}")
     print(f"devloper account {dev_fund}")
@@ -505,13 +592,19 @@ def get_all_info():
 
 def main():
     setup_main_token()
-    setup_oracle()
+    set_taxoffice_maintoken()
     setup_bond_token()
     setup_share_token()
+    set_taxoffice_sharetoken()
     setup_boardroom()
+    setup_oracle()
+    setup_MainToken_oracle()
+    setup_ShareToken_oracle()
     setup_treasury()
-    setup_share_reward_pool()
     setup_genesis_pool()
+    setup_share_reward_pool()
     setup_node_bonus_reward_pool()
+    setup_node_bonus_reward_pool()
+    setup_sbond_bonus_reward_pool()
     setup_zap()
     get_all_info()

@@ -6,17 +6,14 @@
 
 pragma solidity ^0.6.0;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import "./utils/ShareWrapper.sol";
 import "./utils/ContractGuard.sol";
-import "../interfaces/IBasisAsset.sol";
+import "../interfaces/IERC20Taxable.sol";
 import "../interfaces/ITreasury.sol";
-import "../interfaces/IpegBoardroom.sol";
 
-contract Boardroom is ShareWrapper, ContractGuard {
+contract Boardroom is ShareWrapper, ContractGuard, ReentrancyGuard {
     using SafeERC20 for IERC20;
     using Address for address;
     using SafeMath for uint256;
@@ -221,6 +218,7 @@ contract Boardroom is ShareWrapper, ContractGuard {
         public
         override
         onlyOneBlock
+        nonReentrant
         updateReward(msg.sender)
     {
         require(amount > 0, "Boardroom: Cannot stake 0");
@@ -233,6 +231,7 @@ contract Boardroom is ShareWrapper, ContractGuard {
         public
         override
         onlyOneBlock
+        nonReentrant
         memberExists
         updateReward(msg.sender)
     {
@@ -251,7 +250,7 @@ contract Boardroom is ShareWrapper, ContractGuard {
     function _sacrificeReward() internal updateReward(msg.sender) {
         uint256 reward = members[msg.sender].rewardEarned;
         address _token = address(snow);
-        IBasisAsset(_token).burn(reward);
+        IERC20Taxable(_token).burn(reward);
         members[msg.sender].rewardEarned = 0;
         emit RewardSacrificed(_token, msg.sender, reward);
     }
@@ -278,6 +277,7 @@ contract Boardroom is ShareWrapper, ContractGuard {
     function allocateSeigniorage(uint256 amount)
         external
         onlyOneBlock
+        nonReentrant
         onlyOperator
     {
         require(amount > 0, "Boardroom: Cannot allocate 0");

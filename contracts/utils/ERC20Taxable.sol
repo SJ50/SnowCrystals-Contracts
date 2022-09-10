@@ -28,6 +28,7 @@ contract ERC20Taxable is ERC20, ERC20Burnable, Operator {
     uint256 public dynamicTaxRate;
 
     address public taxOffice;
+    uint256 public taxRate;
 
     constructor(string memory _name, string memory _symbol)
         public
@@ -82,7 +83,7 @@ contract ERC20Taxable is ERC20, ERC20Burnable, Operator {
             whitelistType[_account] == WhitelistType.BOTH;
     }
 
-    function getCurrentTaxRate() public returns (uint256 taxRate) {
+    function getCurrentTaxRate() public returns (uint256) {
         taxRate = staticTaxRate;
         if (enableDynamicTax == true) {
             _updateDynamicTaxRate();
@@ -91,6 +92,7 @@ contract ERC20Taxable is ERC20, ERC20Burnable, Operator {
             }
             taxRate = dynamicTaxRate;
         }
+        return taxRate;
     }
 
     function transferFrom(
@@ -103,18 +105,19 @@ contract ERC20Taxable is ERC20, ERC20Burnable, Operator {
             !isWhitelistedSender(_sender) && !isWhitelistedRecipient(_recipient)
         ) {
             //Calculate tax amount and then handle tax.
-            uint256 taxRate = getCurrentTaxRate();
+            uint256 _taxRate = getCurrentTaxRate();
+            if (_taxRate > 0) {
+                uint256 taxDiscount = BASIS_POINTS_DENOM.sub(
+                    ITaxOffice(taxOffice).taxDiscount(_sender, _recipient)
+                );
 
-            uint256 taxDiscount = BASIS_POINTS_DENOM.sub(
-                ITaxOffice(taxOffice).taxDiscount(_sender, _recipient)
-            );
-
-            taxRate = taxRate.mul(taxDiscount).div(BASIS_POINTS_DENOM);
-            uint256 taxableAmount = _amount.mul(taxRate).div(
-                BASIS_POINTS_DENOM
-            );
-            _amount = _amount.sub(taxableAmount);
-            _handleTax(_sender, taxableAmount);
+                _taxRate = _taxRate.mul(taxDiscount).div(BASIS_POINTS_DENOM);
+                uint256 taxableAmount = _amount.mul(_taxRate).div(
+                    BASIS_POINTS_DENOM
+                );
+                _amount = _amount.sub(taxableAmount);
+                _handleTax(_sender, taxableAmount);
+            }
         }
 
         //Use inherited function to transferFrom.

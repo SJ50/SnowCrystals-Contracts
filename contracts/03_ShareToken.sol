@@ -2,28 +2,23 @@
 
 pragma solidity ^0.6.0;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
-
-import "./access/Operator.sol";
+import "./utils/ERC20Taxable.sol";
 
 /*
     https://snowcrystals.finance
 */
-contract GlcrOld is ERC20, ERC20Burnable, Operator {
+contract Glcr is ERC20Taxable {
     using SafeMath for uint256;
 
     /*
         TOTAL MAX SUPPLY = 32000 GLCR
         - 21500 GLCRs allocated to farming pools
-        - Airdop 250 GLCRs allocated to DAO wallet
-        - Allocate 6750 GLCRs to DAO wallet for linear vesting
+        - Airdop 50 GLCRs allocated to DAO wallet
+        - Allocate 6950 GLCRs to DAO wallet for linear vesting
         - Allocate 3499 GLCRs to Dev wallet for linear vesting
     */
     uint256 public constant FARMING_POOL_REWARD_ALLOCATION = 21500 ether;
-    uint256 public constant COMMUNITY_FUND_POOL_ALLOCATION = 6750 ether;
+    uint256 public constant COMMUNITY_FUND_POOL_ALLOCATION = 6950 ether;
     uint256 public constant DEV_FUND_POOL_ALLOCATION = 3499 ether;
 
     uint256 public constant VESTING_DURATION = 52 weeks;
@@ -47,9 +42,9 @@ contract GlcrOld is ERC20, ERC20Burnable, Operator {
         uint256 _startTime,
         address _daoFund,
         address _devFund
-    ) public ERC20(name_, symbol_) {
+    ) public ERC20Taxable(name_, symbol_) {
         _mint(msg.sender, 1 ether); // mint 1 Share for initial pools deployment and Boardroom initialization
-        _mint(_daoFund, 250 ether); // Airdop 250 GLCR allocated to DAO wallet
+        _mint(_daoFund, 25 ether); // Airdop 25 GLCR allocated to DAO wallet
 
         startTime = _startTime;
         endTime = startTime + VESTING_DURATION;
@@ -57,10 +52,10 @@ contract GlcrOld is ERC20, ERC20Burnable, Operator {
         communityFundLastClaimed = startTime;
         devFundLastClaimed = startTime;
 
-        communityFundRewardRate =
-            COMMUNITY_FUND_POOL_ALLOCATION /
-            (VESTING_DURATION);
-        devFundRewardRate = DEV_FUND_POOL_ALLOCATION / (VESTING_DURATION);
+        communityFundRewardRate = COMMUNITY_FUND_POOL_ALLOCATION.div(
+            VESTING_DURATION
+        );
+        devFundRewardRate = DEV_FUND_POOL_ALLOCATION.div(VESTING_DURATION);
 
         require(_devFund != address(0), "Address cannot be 0");
         devFund = _devFund;
@@ -129,15 +124,16 @@ contract GlcrOld is ERC20, ERC20Burnable, Operator {
         _mint(_farmingIncentiveFund, FARMING_POOL_REWARD_ALLOCATION);
     }
 
-    function burn(uint256 amount) public override {
-        super.burn(amount);
+    //*================ TAX FUNCTIONS ================*//
+
+    function _updateDynamicTaxRate() internal override {
+        dynamicTaxRate = ITaxOffice(taxOffice).calculateShareTokenTax();
     }
 
-    function governanceRecoverUnsupported(
-        address _token,
-        uint256 _amount,
-        address _to
-    ) external onlyOperator {
-        IERC20(_token).transfer(_to, IERC20(_token).balanceOf(address(this)));
+    function _handleTax(address _sender, uint256 _amount) internal override {
+        _approve(_sender, taxOffice, _amount);
+        //Use inherited function to transferFrom.
+        ERC20.transferFrom(_sender, taxOffice, _amount);
+        ITaxOffice(taxOffice).handleShareTokenTax(_amount);
     }
 }

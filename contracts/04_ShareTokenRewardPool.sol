@@ -2,7 +2,6 @@
 
 pragma solidity ^0.6.0;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
@@ -253,9 +252,7 @@ contract ShareTokenRewardPool {
         address _sender = msg.sender;
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_sender];
-        if (pool.token == sBond) {
-            IBonusRewards(bondBonusRewardPool).deposit(0, _amount, _sender);
-        }
+
         updatePool(_pid);
         if (user.amount > 0) {
             uint256 _pending = user
@@ -273,6 +270,9 @@ contract ShareTokenRewardPool {
             user.amount = user.amount.add(_amount);
         }
         user.rewardDebt = user.amount.mul(pool.accglcrPerShare).div(1e18);
+        if (pool.token == sBond) {
+            IBonusRewards(bondBonusRewardPool).deposit(0, _amount, _sender);
+        }
         emit Deposit(_sender, _pid, _amount);
     }
 
