@@ -41,19 +41,19 @@ contract TaxOffice is Operator {
     ];
     uint256[] public mainTokenTaxRateTiers = [
         2000,
-        1900,
-        1800,
-        1700,
+        2000,
+        2000,
+        2000,
         1600,
-        1500,
-        1500,
-        1500,
-        1500,
-        1400,
-        900,
-        400,
-        200,
-        100
+        1600,
+        1600,
+        1600,
+        1200,
+        800,
+        800,
+        800,
+        800,
+        800
     ];
 
     uint256[] public shareTokenTaxTwapTiers = [
@@ -74,19 +74,19 @@ contract TaxOffice is Operator {
     ];
     uint256[] public shareTokenTaxRateTiers = [
         2000,
-        1900,
-        1800,
-        1700,
+        2000,
+        2000,
+        2000,
         1600,
-        1500,
-        1500,
-        1500,
-        1500,
-        1400,
-        900,
-        400,
-        200,
-        100
+        1600,
+        1600,
+        1600,
+        1200,
+        800,
+        800,
+        800,
+        800,
+        800
     ];
 
     mapping(address => mapping(address => uint256)) public taxDiscount;
@@ -365,6 +365,7 @@ contract TaxOfficeV3 is TaxOfficeV2 {
     address public treasury;
     uint256 public devBalance;
     uint256 public bonusBalance;
+    bool public bonusRewardEnabled;
 
     constructor(
         address _mainToken,
@@ -399,11 +400,11 @@ contract TaxOfficeV3 is TaxOfficeV2 {
             msg.sender == address(mainToken) || msg.sender == operator(),
             "Error: Withdraw permissions insufficient."
         );
-
         uint256 devAmount = _amount.mul(250).div(1000);
-        uint256 bonusAmount = _amount.mul(750).div(1000);
-
-        bonusBalance = bonusBalance.add(bonusAmount);
+        uint256 bonusAmount = _amount.sub(devAmount);
+        if (bonusRewardEnabled) {
+            bonusBalance = bonusBalance.add(bonusAmount);
+        }
         swapTokensForOther(devAmount);
         updateMainTokenPrice();
     }
@@ -498,5 +499,9 @@ contract TaxOfficeV3 is TaxOfficeV2 {
 
     function setTreasury(address _treasury) external onlyOperator {
         treasury = _treasury;
+    }
+
+    function toggleBonusRewardEnabled() external onlyOperator {
+        bonusRewardEnabled = !bonusRewardEnabled;
     }
 }
