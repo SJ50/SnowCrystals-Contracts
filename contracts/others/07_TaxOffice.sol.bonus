@@ -326,47 +326,23 @@ contract TaxOfficeV2 is TaxOffice {
             "Error: Withdraw permissions insufficient."
         );
 
-        uint256 burnAmount_ = _amount.mul(800).div(1000);
-        uint256 otherAmount_ = _amount.sub(burnAmount_);
-
-        swapShareTokenToMainTokenAndBurn(
-            burnAmount_,
-            address(shareToken),
-            address(pegToken),
-            address(mainToken)
-        );
-
-        swapTokensForOther(
-            otherAmount_,
-            address(shareToken),
-            address(pegToken)
-        );
-
-        updateMainTokenPrice();
-        //Emit event.
-        emit HandledShareTokenTax(_amount);
-    }
-
-    function swapShareTokenToMainTokenAndBurn(
-        uint256 _tokenAmount,
-        address _token0,
-        address _token1,
-        address _token2
-    ) private {
+        //Check _amount of share token to be handled is available.
+        uint256 tokenBalance = shareToken.balanceOf(address(this));
+        if (_amount > tokenBalance) {
+            _amount = tokenBalance;
+        }
         // generate the uniswap pair path of token -> weth
         address[] memory shareToMainTokenSwapPath;
         shareToMainTokenSwapPath = new address[](3);
-        shareToMainTokenSwapPath[0] = _token0;
-        shareToMainTokenSwapPath[1] = _token1;
-        shareToMainTokenSwapPath[2] = _token2;
+        shareToMainTokenSwapPath[0] = address(shareToken);
+        shareToMainTokenSwapPath[1] = address(pegToken);
+        shareToMainTokenSwapPath[2] = address(mainToken);
         //Swap from share token to main token.
-        _approveTokenIfNeeded(_token0, router, _tokenAmount);
-        _approveTokenIfNeeded(_token1, router, _tokenAmount);
-        _approveTokenIfNeeded(_token2, router, _tokenAmount);
+        IERC20(address(shareToken)).safeIncreaseAllowance(router, _amount);
 
         uint256[] memory amounts = IUniswapV2Router(router)
             .swapExactTokensForTokens(
-                _tokenAmount,
+                _amount,
                 0,
                 shareToMainTokenSwapPath,
                 address(this),
@@ -374,56 +350,30 @@ contract TaxOfficeV2 is TaxOffice {
             );
         uint256 mainTokenAmounts = amounts[2];
         mainToken.burn(mainTokenAmounts);
-    }
 
-    function swapTokensForOther(
-        uint256 _tokenAmount,
-        address _token0,
-        address _token1
-    ) internal {
-        //Check _amount of token to be handled is available.
-        uint256 tokenBalance = IERC20Taxable(_token0).balanceOf(address(this));
-        if (_tokenAmount > tokenBalance) {
-            _tokenAmount = tokenBalance;
-        }
-        // generate the uniswap pair path of token -> peg
-        address[] memory path = new address[](2);
-        path[0] = _token0;
-        path[1] = _token1;
-
-        // approve token transfer to cover all possible scenarios
-        _approveTokenIfNeeded(_token0, router, _tokenAmount);
-        _approveTokenIfNeeded(_token1, router, _tokenAmount);
-
-        IUniswapV2Router(router).swapExactTokensForTokens(
-            _tokenAmount,
-            0, // accept any amount of pegToken
-            path,
-            address(this),
-            block.timestamp + 40
-        );
-    }
-
-    function _approveTokenIfNeeded(
-        address _token,
-        address _router,
-        uint256 _tokenAmount
-    ) internal {
-        if (IERC20(_token).allowance(address(this), _router) < _tokenAmount) {
-            IERC20(_token).safeApprove(_router, type(uint256).max);
-        }
+        updateMainTokenPrice();
+        //Emit event.
+        emit HandledShareTokenTax(_amount);
     }
 }
 
 contract TaxOfficeV3 is TaxOfficeV2 {
     using SafeERC20 for IERC20;
 
+    address public sBondBonusRewardPool;
+    address public nodeBonusRewardPool;
+    address public treasury;
+    uint256 public devBalance;
+    uint256 public bonusBalance;
+    bool public bonusRewardEnabled;
+
     constructor(
         address _mainToken,
         address _shareToken,
         address _mainTokenOracle,
         address _pegToken,
-        address _router
+        address _router,
+        address _treasury
     )
         public
         TaxOfficeV2(
@@ -433,14 +383,129 @@ contract TaxOfficeV3 is TaxOfficeV2 {
             _pegToken,
             _router
         )
-    {}
+    {
+        treasury = _treasury;
+    }
+
+    modifier onlyOperatorOrTreasury() {
+        require(
+            operator() == msg.sender || treasury == msg.sender,
+            "caller is not the operator or the treasury"
+        );
+        _;
+    }
 
     function handleMainTokenTax(uint256 _amount) external override {
         require(
             msg.sender == address(mainToken) || msg.sender == operator(),
             "Error: Withdraw permissions insufficient."
         );
-        swapTokensForOther(_amount, address(mainToken), address(pegToken));
+        uint256 devAmount = _amount.mul(250).div(1000);
+        uint256 bonusAmount = _amount.sub(devAmount);
+        if (bonusRewardEnabled) {
+            bonusBalance = bonusBalance.add(bonusAmount);
+        }
+        swapTokensForOther(devAmount);
         updateMainTokenPrice();
+    }
+
+    function swapTokensForOther(uint256 _tokenAmount)
+        private
+        returns (uint256)
+    {
+        // generate the uniswap pair path of token -> weth
+        address[] memory path = new address[](2);
+        path[0] = address(mainToken);
+        path[1] = address(pegToken);
+
+        // approve token transfer to cover all possible scenarios
+        _approveTokenIfNeeded(address(mainToken), router, _tokenAmount);
+        _approveTokenIfNeeded(address(pegToken), router, _tokenAmount);
+
+        IUniswapV2Router(router).swapExactTokensForTokens(
+            _tokenAmount,
+            0, // accept any amount of pegToken
+            path,
+            address(this),
+            block.timestamp + 40
+        );
+        return pegToken.balanceOf(address(this));
+    }
+
+    function _approveTokenIfNeeded(
+        address _token,
+        address _router,
+        uint256 _tokenAmount
+    ) private {
+        if (IERC20(_token).allowance(address(this), _router) < _tokenAmount) {
+            IERC20(_token).safeApprove(_router, type(uint256).max);
+        }
+    }
+
+    function sendToBonus(
+        uint256 _price,
+        uint256 _ceilingPrice,
+        uint256 _nextEpochPoint
+    ) public onlyOperatorOrTreasury {
+        if (block.timestamp > _nextEpochPoint) {
+            return;
+        }
+        if (_price < _ceilingPrice) {
+            uint256 half = bonusBalance.div(2);
+            uint256 otherHalf = bonusBalance.sub(half);
+
+            mainToken.transfer(sBondBonusRewardPool, half);
+            mainToken.transfer(nodeBonusRewardPool, otherHalf);
+
+            _restartBonusRewardPool(
+                half,
+                sBondBonusRewardPool,
+                _nextEpochPoint
+            );
+            _restartBonusRewardPool(
+                otherHalf,
+                nodeBonusRewardPool,
+                _nextEpochPoint
+            );
+        } else {
+            mainToken.transfer(nodeBonusRewardPool, bonusBalance);
+
+            _restartBonusRewardPool(
+                bonusBalance,
+                nodeBonusRewardPool,
+                _nextEpochPoint
+            );
+        }
+        bonusBalance = 0;
+    }
+
+    function _restartBonusRewardPool(
+        uint256 _amount,
+        address _rewardPool,
+        uint256 _nextEpochPoint
+    ) private {
+        IBonusRewards(_rewardPool).restartPool(_amount, _nextEpochPoint);
+    }
+
+    function setBondBonusReward(address _sBondBonusRewardPool)
+        external
+        onlyOperator
+    {
+        sBondBonusRewardPool = _sBondBonusRewardPool;
+    }
+
+    function setNodeBonusRewardPool(address _nodeBonusRewardPool)
+        external
+        onlyOperator
+    {
+        nodeBonusRewardPool = _nodeBonusRewardPool;
+    }
+
+    function setTreasury(address _treasury) external onlyOperator {
+        treasury = _treasury;
+    }
+
+    function toggleBonusRewardEnabled() external onlyOperator {
+        bonusRewardEnabled = !bonusRewardEnabled;
     }
 }

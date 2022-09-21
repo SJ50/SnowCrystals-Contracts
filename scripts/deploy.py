@@ -506,7 +506,6 @@ def deploy_tax_office():
             main_token_oracle,
             peg_token,
             router_address,
-            treasury,
             {"from": deployer_account},
             publish_source=publish_source,
         )

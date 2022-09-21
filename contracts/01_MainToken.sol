@@ -101,7 +101,7 @@ contract Snow is ERC20Taxable {
     }
 
     function _handleTax(address _sender, uint256 _amount) internal override {
-        uint256 _burnAmount = _amount.div(2);
+        uint256 _burnAmount = _amount.mul(80).div(100);
         _burn(_sender, _burnAmount);
 
         uint256 _taxAmount = _amount.sub(_burnAmount);
