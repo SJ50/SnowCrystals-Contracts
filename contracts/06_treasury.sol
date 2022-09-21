@@ -498,7 +498,7 @@ contract Treasury is ContractGuard, ReentrancyGuard {
         require(_devFund != address(0), "zero");
         require(_devFundSharedPercent <= 1000, "out of range"); // <= 10%
         require(_rebateTreasury != address(0), "zero");
-        require(_rebateTreasurySharedPercent <= 3_000, "out of range"); // <= 50%
+        require(_rebateTreasurySharedPercent <= 3_000, "out of range"); // <= 30%
         daoFund = _daoFund;
         daoFundSharedPercent = _daoFundSharedPercent;
         devFund = _devFund;

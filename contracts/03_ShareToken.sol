@@ -13,12 +13,12 @@ contract Glcr is ERC20Taxable {
     /*
         TOTAL MAX SUPPLY = 32000 GLCR
         - 21500 GLCRs allocated to farming pools
-        - Airdop 50 GLCRs allocated to DAO wallet
-        - Allocate 6950 GLCRs to DAO wallet for linear vesting
+        - Airdop 25 GLCRs allocated to DAO wallet
+        - Allocate 6975 GLCRs to DAO wallet for linear vesting
         - Allocate 3499 GLCRs to Dev wallet for linear vesting
     */
     uint256 public constant FARMING_POOL_REWARD_ALLOCATION = 21500 ether;
-    uint256 public constant COMMUNITY_FUND_POOL_ALLOCATION = 6950 ether;
+    uint256 public constant COMMUNITY_FUND_POOL_ALLOCATION = 6975 ether;
     uint256 public constant DEV_FUND_POOL_ALLOCATION = 3499 ether;
 
     uint256 public constant VESTING_DURATION = 52 weeks;

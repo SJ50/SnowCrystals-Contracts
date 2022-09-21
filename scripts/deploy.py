@@ -383,26 +383,26 @@ def deploy_share_token_reward_pool():
     return share_token_reward_pool_contract
 
 
-def deploy_bonus_reward_pool():
-    if len(SnowNodeBonusRewardPool) <= 0:
-        print("deploying bonus reward pool!")
-        main_token = os.environ.get("MAIN_TOKEN")
-        pool_start_time = start_time
-        deposit_token = os.environ.get("MAIN_TOKEN_LP")
-        snow_bounus_pool_contract = SnowNodeBonusRewardPool.deploy(
-            main_token,
-            pool_start_time,
-            deposit_token,
-            {"from": deployer_account},
-            publish_source=publish_source,
-        )
-        append_new_line(
-            ".env",
-            "export NODE_BONUS_REWARD_POOL=" + snow_bounus_pool_contract.address,
-        )
-    snow_bounus_pool_contract = SnowNodeBonusRewardPool[-1]
-    os.environ["NODE_BONUS_REWARD_POOL"] = snow_bounus_pool_contract.address
-    return snow_bounus_pool_contract
+# def deploy_bonus_reward_pool():
+#     if len(SnowNodeBonusRewardPool) <= 0:
+#         print("deploying bonus reward pool!")
+#         main_token = os.environ.get("MAIN_TOKEN")
+#         pool_start_time = start_time
+#         deposit_token = os.environ.get("MAIN_TOKEN_LP")
+#         snow_bounus_pool_contract = SnowNodeBonusRewardPool.deploy(
+#             main_token,
+#             pool_start_time,
+#             deposit_token,
+#             {"from": deployer_account},
+#             publish_source=publish_source,
+#         )
+#         append_new_line(
+#             ".env",
+#             "export NODE_BONUS_REWARD_POOL=" + snow_bounus_pool_contract.address,
+#         )
+#     snow_bounus_pool_contract = SnowNodeBonusRewardPool[-1]
+#     os.environ["NODE_BONUS_REWARD_POOL"] = snow_bounus_pool_contract.address
+#     return snow_bounus_pool_contract
 
 
 def deploy_main_token_node():
@@ -413,7 +413,6 @@ def deploy_main_token_node():
         main_token_node_contract = MainTokenNode.deploy(
             start_time,
             main_token_lp,
-            node_bonus_reward_pool,
             {"from": deployer_account},
             publish_source=publish_source,
         )
@@ -467,29 +466,29 @@ def deploy_genesis_pool():
     return usdc_genesis_pool_contract
 
 
-def deploy_sbond_reward_pool():
-    if len(SnowSbondBonusRewardPool) <= 0:
-        main_token = os.environ.get("MAIN_TOKEN")
-        deposit_fee = 0
-        pool_start_time = start_time
-        deposit_token = os.environ.get("BOND_TOKEN")
-        print("deploying snow sbond bonus reward pool...")
-        sbond_reward_pool_contract = SnowSbondBonusRewardPool.deploy(
-            main_token,
-            pool_start_time,
-            dao_fund,
-            deposit_fee,
-            deposit_token,
-            {"from": deployer_account},
-            publish_source=publish_source,
-        )
-        append_new_line(
-            ".env",
-            "export SBOND_REWARD_POOL=" + sbond_reward_pool_contract.address,
-        )
-    sbond_reward_pool_contract = SnowSbondBonusRewardPool[-1]
-    os.environ["SBOND_REWARD_POOL"] = sbond_reward_pool_contract.address
-    return sbond_reward_pool_contract
+# def deploy_sbond_reward_pool():
+#     if len(SnowSbondBonusRewardPool) <= 0:
+#         main_token = os.environ.get("MAIN_TOKEN")
+#         deposit_fee = 0
+#         pool_start_time = start_time
+#         deposit_token = os.environ.get("BOND_TOKEN")
+#         print("deploying snow sbond bonus reward pool...")
+#         sbond_reward_pool_contract = SnowSbondBonusRewardPool.deploy(
+#             main_token,
+#             pool_start_time,
+#             dao_fund,
+#             deposit_fee,
+#             deposit_token,
+#             {"from": deployer_account},
+#             publish_source=publish_source,
+#         )
+#         append_new_line(
+#             ".env",
+#             "export SBOND_REWARD_POOL=" + sbond_reward_pool_contract.address,
+#         )
+#     sbond_reward_pool_contract = SnowSbondBonusRewardPool[-1]
+#     os.environ["SBOND_REWARD_POOL"] = sbond_reward_pool_contract.address
+#     return sbond_reward_pool_contract
 
 
 def deploy_tax_office():
@@ -498,7 +497,6 @@ def deploy_tax_office():
         share_token = os.environ.get("SHARE_TOKEN")
         main_token_oracle = os.environ.get("MAINTOKEN_ORACLE")
         peg_token = os.environ.get("PEG_TOKEN")
-        treasury = os.environ.get("TREASURY")
         print("deploying tax_office...")
         tax_office_contract = TaxOfficeV3.deploy(
             main_token,
@@ -577,11 +575,11 @@ def main():
     deploy_ShareToken_oracle_contract()
     deploy_DataFeed_oracle_contract()
     deploy_share_token_reward_pool()
-    deploy_bonus_reward_pool()
+    # deploy_bonus_reward_pool()
     deploy_main_token_node()
     deploy_share_token_node()
     deploy_genesis_pool()
-    deploy_sbond_reward_pool()
+    # deploy_sbond_reward_pool()
     deploy_tax_office()
     deploy_wrapped_router()
 

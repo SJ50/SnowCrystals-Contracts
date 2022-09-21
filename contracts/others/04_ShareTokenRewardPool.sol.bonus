@@ -5,6 +5,8 @@ pragma solidity ^0.6.0;
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
+import "../interfaces/IBonusRewards.sol";
+
 // Note that this pool has no minter key of glcr (rewards).
 // Instead, the governance will call glcr distributeReward method and send reward to this pool at the beginning.
 contract ShareTokenRewardPool {
@@ -32,6 +34,7 @@ contract ShareTokenRewardPool {
 
     IERC20 public glcr;
     IERC20 public sBond;
+    address public bondBonusRewardPool;
 
     // Info of each pool.
     PoolInfo[] public poolInfo;
@@ -50,7 +53,7 @@ contract ShareTokenRewardPool {
 
     uint256 public glcrPerSecond;
     uint256 public runningTime = 365 days;
-    uint256 public constant TOTAL_REWARDS = 21500 ether;
+    uint256 public constant TOTAL_REWARDS = 50000 ether;
 
     bool enableTaxes = true;
     uint256[] public stakingTires = [
@@ -267,7 +270,9 @@ contract ShareTokenRewardPool {
             user.amount = user.amount.add(_amount);
         }
         user.rewardDebt = user.amount.mul(pool.accglcrPerShare).div(1e18);
-
+        if (pool.token == sBond) {
+            IBonusRewards(bondBonusRewardPool).deposit(0, _amount, _sender);
+        }
         emit Deposit(_sender, _pid, _amount);
     }
 
@@ -331,7 +336,9 @@ contract ShareTokenRewardPool {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_sender];
         require(user.amount >= _amount, "withdraw: not good");
-
+        if (pool.token == sBond) {
+            IBonusRewards(bondBonusRewardPool).withdraw(0, _amount, _sender);
+        }
         updatePool(_pid);
         uint256 _pending = user.amount.mul(pool.accglcrPerShare).div(1e18).sub(
             user.rewardDebt
@@ -390,6 +397,13 @@ contract ShareTokenRewardPool {
 
     function setDaoFund(address _daoFund) external onlyOperator {
         daoFund = _daoFund;
+    }
+
+    function setBondBonusRewardPool(address _bondBonusRewardPool)
+        external
+        onlyOperator
+    {
+        bondBonusRewardPool = _bondBonusRewardPool;
     }
 
     function governanceRecoverUnsupported(

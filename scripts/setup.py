@@ -100,7 +100,7 @@ node_bonus_reward_pool = os.environ.get("NODE_BONUS_REWARD_POOL")
 main_token_node = os.environ.get("MAIN_TOKEN_NODE")
 share_token_node = os.environ.get("SHARE_TOKEN_NODE")
 genesis_pool = os.environ.get("GENESIS_POOL")
-sbond_reward_pool = os.environ.get("SBOND_REWARD_POOL")
+# sbond_reward_pool = os.environ.get("SBOND_REWARD_POOL")
 tax_office = os.environ.get("TAX_OFFICE")
 wrapped_router = os.environ.get("WRAPPED_ROUTER")
 # liquidity_fund = os.environ.get("LIQUIDITY_FUND")
@@ -209,29 +209,29 @@ def set_taxoffice_maintoken():
 
     set_wrapped_router_whitelist_type_tx.wait(1)
 
-    print(
-        "Maintoken exclude node_bonus transfering and claiming maintoken to & from node_bonus free..."
-    )
-    set_node_bonus_reward_pool_whitelist_type_tx = (
-        tax_office_contract.setMainTokenWhitelistType(
-            node_bonus_reward_pool,
-            3,
-            {"from": deployer_account},
-        )
-    )
-    set_node_bonus_reward_pool_whitelist_type_tx.wait(1)
+    # print(
+    #     "Maintoken exclude node_bonus transfering and claiming maintoken to & from node_bonus free..."
+    # )
+    # set_node_bonus_reward_pool_whitelist_type_tx = (
+    #     tax_office_contract.setMainTokenWhitelistType(
+    #         node_bonus_reward_pool,
+    #         3,
+    #         {"from": deployer_account},
+    #     )
+    # )
+    # set_node_bonus_reward_pool_whitelist_type_tx.wait(1)
 
-    print(
-        "Maintoken exclude sbond_bonus transfering and claiming maintoken to & from sbond_bonus free..."
-    )
-    set_sbond_reward_pool_whitelist_type_tx = (
-        tax_office_contract.setMainTokenWhitelistType(
-            sbond_reward_pool,
-            3,
-            {"from": deployer_account},
-        )
-    )
-    set_sbond_reward_pool_whitelist_type_tx.wait(1)
+    # print(
+    #     "Maintoken exclude sbond_bonus transfering and claiming maintoken to & from sbond_bonus free..."
+    # )
+    # set_sbond_reward_pool_whitelist_type_tx = (
+    #     tax_office_contract.setMainTokenWhitelistType(
+    #         sbond_reward_pool,
+    #         3,
+    #         {"from": deployer_account},
+    #     )
+    # )
+    # set_sbond_reward_pool_whitelist_type_tx.wait(1)
 
     print("Maintoken exclude rebate_treasury claiming maintoken free...")
     set_rebate_treasury_whitelist_type_tx = (
@@ -519,34 +519,34 @@ def setup_share_reward_pool():
     share_reward_add_bond_tx.wait(1)
 
 
-def setup_node_bonus_reward_pool():
-    node_bonus_reward_pool_contract = Contract(node_bonus_reward_pool)
-    node_bonus_reward_pool_set_node_tx = node_bonus_reward_pool_contract.setNode(
-        main_token_node, {"from": deployer_account}
-    )
-    node_bonus_reward_pool_set_node_tx.wait(1)
-    node_bonus_reward_pool_set_liqudity_fund_tx = (
-        node_bonus_reward_pool_contract.setTaxOffice(
-            tax_office, {"from": deployer_account}
-        )
-    )
-    node_bonus_reward_pool_set_liqudity_fund_tx.wait(1)
+# def setup_node_bonus_reward_pool():
+#     node_bonus_reward_pool_contract = Contract(node_bonus_reward_pool)
+#     node_bonus_reward_pool_set_node_tx = node_bonus_reward_pool_contract.setNode(
+#         main_token_node, {"from": deployer_account}
+#     )
+#     node_bonus_reward_pool_set_node_tx.wait(1)
+#     node_bonus_reward_pool_set_liqudity_fund_tx = (
+#         node_bonus_reward_pool_contract.setTaxOffice(
+#             tax_office, {"from": deployer_account}
+#         )
+#     )
+#     node_bonus_reward_pool_set_liqudity_fund_tx.wait(1)
 
 
-def setup_sbond_bonus_reward_pool():
-    sbond_bonus_reward_pool_contract = Contract(sbond_reward_pool)
-    sbond_bonus_reward_pool_set_share_token_reward_pool_tx = (
-        sbond_bonus_reward_pool_contract.setGlcrRewardPool(
-            share_reward_pool, {"from": deployer_account}
-        )
-    )
-    sbond_bonus_reward_pool_set_share_token_reward_pool_tx.wait(1)
-    sbond_bonus_reward_pool_set_liqudity_fund_tx = (
-        sbond_bonus_reward_pool_contract.setTaxOffice(
-            tax_office, {"from": deployer_account}
-        )
-    )
-    sbond_bonus_reward_pool_set_liqudity_fund_tx.wait(1)
+# def setup_sbond_bonus_reward_pool():
+#     sbond_bonus_reward_pool_contract = Contract(sbond_reward_pool)
+#     sbond_bonus_reward_pool_set_share_token_reward_pool_tx = (
+#         sbond_bonus_reward_pool_contract.setGlcrRewardPool(
+#             share_reward_pool, {"from": deployer_account}
+#         )
+#     )
+#     sbond_bonus_reward_pool_set_share_token_reward_pool_tx.wait(1)
+#     sbond_bonus_reward_pool_set_liqudity_fund_tx = (
+#         sbond_bonus_reward_pool_contract.setTaxOffice(
+#             tax_office, {"from": deployer_account}
+#         )
+#     )
+#     sbond_bonus_reward_pool_set_liqudity_fund_tx.wait(1)
 
 
 def setup_zap():
@@ -573,11 +573,11 @@ def get_all_info():
     print(f"MAIN TOKEN LIQUIDITY POOL contract is {main_token_lp}")
     print(f"SHARE TOKEN LIQUIDITY POOL contract is {share_token_lp}")
     print(f"SHARE TOKEN REWARD contract is {share_reward_pool}")
-    print(f"NODE BONUS REWARD POOL contract is {node_bonus_reward_pool}")
+    # print(f"NODE BONUS REWARD POOL contract is {node_bonus_reward_pool}")
     print(f"MAIN TOKEN NODE contract is {main_token_node}")
     print(f"SHARE TOKEN NODE contract is {share_token_node}")
     print(f"GENESIS POOL contract is {genesis_pool}")
-    print(f"SBOND BONUS POOL contract is {sbond_reward_pool}")
+    # print(f"SBOND BONUS POOL contract is {sbond_reward_pool}")
     # print(f"LIQUIDITY FUND contract is {liquidity_fund}")
     print(f"ZAP contract is {zap}")
     print(f"TAX OFFICE contract is {tax_office}")
@@ -603,8 +603,8 @@ def main():
     setup_treasury()
     setup_genesis_pool()
     setup_share_reward_pool()
-    setup_node_bonus_reward_pool()
-    setup_node_bonus_reward_pool()
-    setup_sbond_bonus_reward_pool()
+    # setup_node_bonus_reward_pool()
+    # setup_node_bonus_reward_pool()
+    # setup_sbond_bonus_reward_pool()
     setup_zap()
     get_all_info()
