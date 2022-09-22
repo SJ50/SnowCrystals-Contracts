@@ -32,18 +32,21 @@ contract SnowRebateTreasury is Ownable {
     mapping(address => Asset) public assets;
     mapping(address => VestingSchedule) public vesting;
 
+    uint256 public discount = 70000;
+    bool staticPremiumEnabled = true;
+
     uint256 public bondThreshold = 20 * 1e4;
     uint256 public bondFactor = 80 * 1e4;
     uint256 public secondaryThreshold = 70 * 1e4;
     uint256 public secondaryFactor = 15 * 1e4;
 
-    uint256 public bondVesting = 3 days;
+    uint256 public bondVesting = 1 days;
     uint256 public totalVested = 0;
 
     uint256 public lastBuyback;
     uint256 public buybackAmount = 10 * 1e4;
 
-    address public constant USDC = 0xc21223249CA28397B4B6541dfFaEcC539BfF0c59;
+    address public immutable USDC;
     uint256 public constant DENOMINATOR = 1e6;
 
     address public daoOperator;
@@ -56,9 +59,9 @@ contract SnowRebateTreasury is Ownable {
 
     // Only allow a function to be called with a bondable asset
 
-    modifier onlyAsset(address token) {
+    modifier onlyAsset(address _token) {
         require(
-            assets[token].isAdded,
+            assets[_token].isAdded,
             "RebateTreasury: token is not a bondable asset"
         );
         _;
@@ -81,13 +84,14 @@ contract SnowRebateTreasury is Ownable {
     // Initialize parameters
 
     constructor(
-        address snow,
-        address snowOracle,
-        address treasury
+        address _snow,
+        address _snowOracle,
+        address _treasury
     ) {
-        Snow = IERC20(snow);
-        SnowOracle = IOracle(snowOracle);
-        Treasury = ITreasury(treasury);
+        Snow = IERC20(_snow);
+        SnowOracle = IOracle(_snowOracle);
+        Treasury = ITreasury(_treasury);
+        USDC = _usdc;
         daoOperator = msg.sender;
     }
 
@@ -95,21 +99,21 @@ contract SnowRebateTreasury is Ownable {
         return Treasury.daoFund();
     }
 
-    function setDaoOperator(address operator) external onlyOwner {
-        daoOperator = operator;
+    function setDaoOperator(address _operator) external onlyOwner {
+        daoOperator = _operator;
     }
 
     // Bond asset for discounted Snow at bond rate
 
-    function bond(address token, uint256 amount) external onlyAsset(token) {
-        require(amount > 0, "RebateTreasury: invalid bond amount");
-        uint256 snowAmount = getSnowReturn(token, amount);
+    function bond(address _token, uint256 _amount) external onlyAsset(token) {
+        require(_amount > 0, "RebateTreasury: invalid bond amount");
+        uint256 snowAmount = getSnowReturn(_token, _amount);
         require(
             snowAmount <= Snow.balanceOf(address(this)) - totalVested,
             "RebateTreasury: insufficient snow balance"
         );
 
-        IERC20(token).transferFrom(msg.sender, address(this), amount);
+        IERC20(_token).transferFrom(msg.sender, address(this), _amount);
         _claimVested(msg.sender);
 
         VestingSchedule storage schedule = vesting[msg.sender];
@@ -135,58 +139,62 @@ contract SnowRebateTreasury is Ownable {
 
     // Set Snow token
 
-    function setSnow(address snow) external onlyOwner {
-        Snow = IERC20(snow);
+    function setSnow(address _snow) external onlyOwner {
+        Snow = IERC20(_snow);
     }
 
     // Set Snow oracle
 
-    function setSnowOracle(address oracle) external onlyOwner {
-        SnowOracle = IOracle(oracle);
+    function setSnowOracle(address _oracle) external onlyOwner {
+        SnowOracle = IOracle(_oracle);
     }
 
     // Set Snow treasury
 
-    function setTreasury(address treasury) external onlyOwner {
-        Treasury = ITreasury(treasury);
+    function setTreasury(address _treasury) external onlyOwner {
+        Treasury = ITreasury(_treasury);
     }
 
     // Set bonding parameters of token
 
     function setAsset(
-        address token,
-        bool isAdded,
-        uint256 multiplier,
-        address oracle,
-        bool isLP,
-        address pair
+        address _token,
+        bool _isAdded,
+        uint256 _multiplier,
+        address _oracle,
+        bool _isLP,
+        address _pair
     ) external onlyOwner {
-        assets[token].isAdded = isAdded;
-        assets[token].multiplier = multiplier;
-        assets[token].oracle = oracle;
-        assets[token].isLP = isLP;
-        assets[token].pair = pair;
+        assets[_token].isAdded = _isAdded;
+        assets[_token].multiplier = _multiplier;
+        assets[_token].oracle = _oracle;
+        assets[_token].isLP = _isLP;
+        assets[_token].pair = _pair;
     }
 
     // Set bond pricing parameters
 
     function setBondParameters(
-        uint256 primaryThreshold,
-        uint256 primaryFactor,
-        uint256 secondThreshold,
-        uint256 secondFactor,
-        uint256 vestingPeriod
+        uint256 _primaryThreshold,
+        uint256 _primaryFactor,
+        uint256 _secondThreshold,
+        uint256 _secondFactor,
+        uint256 _vestingPeriod,
+        uint256 _discount,
+        bool _staticPremiumEnabled
     ) external onlyOwner {
-        bondThreshold = primaryThreshold;
-        bondFactor = primaryFactor;
-        secondaryThreshold = secondThreshold;
-        secondaryFactor = secondFactor;
-        bondVesting = vestingPeriod;
+        bondThreshold = _primaryThreshold;
+        bondFactor = _primaryFactor;
+        secondaryThreshold = _secondThreshold;
+        secondaryFactor = _secondFactor;
+        bondVesting = _vestingPeriod;
+        discount = _discount;
+        staticPremiumEnabled = _staticPremiumEnabled;
     }
 
     // Redeem assets for buyback
 
-    function redeemAssetsForBuyback(address[] calldata tokens)
+    function redeemAssetsForBuyback(address[] calldata _tokens)
         external
         onlyDaoOperator
     {
@@ -194,9 +202,12 @@ contract SnowRebateTreasury is Ownable {
         require(lastBuyback != epoch, "RebateTreasury: already bought back");
         lastBuyback = epoch;
 
-        for (uint256 t = 0; t < tokens.length; t++) {
-            require(assets[tokens[t]].isAdded, "RebateTreasury: invalid token");
-            IERC20 Token = IERC20(tokens[t]);
+        for (uint256 t = 0; t < _tokens.length; t++) {
+            require(
+                assets[_tokens[t]].isAdded,
+                "RebateTreasury: invalid token"
+            );
+            IERC20 Token = IERC20(_tokens[t]);
             Token.transfer(Treasury.daoFund(), Token.balanceOf(address(this)));
         }
     }
@@ -207,8 +218,8 @@ contract SnowRebateTreasury is Ownable {
      * ------------------
      */
 
-    function _claimVested(address account) internal {
-        VestingSchedule storage schedule = vesting[account];
+    function _claimVested(address _account) internal {
+        VestingSchedule storage schedule = vesting[_account];
         if (schedule.amount == 0 || schedule.amount == schedule.claimed) return;
         if (
             block.timestamp <= schedule.lastClaimed ||
@@ -226,7 +237,7 @@ contract SnowRebateTreasury is Ownable {
             ? schedule.end
             : block.timestamp;
         totalVested -= claimable;
-        Snow.transfer(account, claimable);
+        Snow.transfer(_account, claimable);
     }
 
     /*
@@ -237,22 +248,22 @@ contract SnowRebateTreasury is Ownable {
 
     // Calculate Snow return of bonding amount of token
 
-    function getSnowReturn(address token, uint256 amount)
+    function getSnowReturn(address _token, uint256 amount)
         public
         view
-        onlyAsset(token)
+        onlyAsset(_token)
         returns (uint256)
     {
         uint256 snowPrice = getSnowPrice();
-        uint256 tokenPrice = getTokenPrice(token);
+        uint256 tokenPrice = getTokenPrice(_token);
         uint256 bondPremium = getBondPremium();
-        uint256 decimalsMultiplier = token == USDC ? 1e12 : 1;
+        uint256 decimalsMultiplier = _token == USDC ? 1e12 : 1;
         return
             (amount *
                 decimalsMultiplier *
                 tokenPrice *
                 (bondPremium + DENOMINATOR) *
-                assets[token].multiplier) /
+                assets[_token].multiplier) /
             (DENOMINATOR * DENOMINATOR) /
             snowPrice;
     }
@@ -260,6 +271,10 @@ contract SnowRebateTreasury is Ownable {
     // Calculate premium for bonds based on bonding curve
 
     function getBondPremium() public view returns (uint256) {
+        if (staticPremiumEnabled) {
+            return discount;
+        }
+
         uint256 snowPrice = getSnowPrice();
         if (snowPrice < 1e18) return 0;
 
@@ -288,13 +303,13 @@ contract SnowRebateTreasury is Ownable {
     function getTokenPrice(address token)
         public
         view
-        onlyAsset(token)
+        onlyAsset(_token)
         returns (uint256)
     {
-        Asset memory asset = assets[token];
+        Asset memory asset = assets[_token];
         IOracle Oracle = IOracle(asset.oracle);
         if (!asset.isLP) {
-            return Oracle.consult(token, 1e18);
+            return Oracle.consult(_token, 1e18);
         }
 
         IUniswapV2Pair Pair = IUniswapV2Pair(asset.pair);
@@ -321,8 +336,8 @@ contract SnowRebateTreasury is Ownable {
     }
 
     // Get claimable vested Snow for account
-    function claimableSnow(address account) external view returns (uint256) {
-        VestingSchedule memory schedule = vesting[account];
+    function claimableSnow(address _account) external view returns (uint256) {
+        VestingSchedule memory schedule = vesting[_account];
         if (
             block.timestamp <= schedule.lastClaimed ||
             schedule.lastClaimed >= schedule.end

@@ -50,10 +50,10 @@ contract TaxOffice is Operator {
         1600,
         800,
         800,
-        500,
-        500,
-        500,
-        500
+        600,
+        600,
+        600,
+        400
     ];
 
     uint256[] public shareTokenTaxTwapTiers = [
@@ -83,10 +83,10 @@ contract TaxOffice is Operator {
         1600,
         800,
         800,
-        500,
-        500,
-        500,
-        500
+        600,
+        600,
+        600,
+        400
     ];
 
     mapping(address => mapping(address => uint256)) public taxDiscount;
