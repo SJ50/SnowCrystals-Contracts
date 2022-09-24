@@ -107,7 +107,7 @@ contract GlcrRebateTreasury is Ownable {
 
     // Bond asset for discounted Glcr at bond rate
 
-    function bond(address _token, uint256 _amount) external onlyAsset(token) {
+    function bond(address _token, uint256 _amount) external onlyAsset(_token) {
         require(_amount > 0, "RebateTreasury: invalid bond amount");
         uint256 glcrAmount = getGlcrReturn(_token, _amount);
         require(
@@ -250,7 +250,7 @@ contract GlcrRebateTreasury is Ownable {
 
     // Calculate Glcr return of bonding amount of token
 
-    function getGlcrReturn(address token, uint256 _amount)
+    function getGlcrReturn(address _token, uint256 _amount)
         public
         view
         onlyAsset(_token)
@@ -305,7 +305,7 @@ contract GlcrRebateTreasury is Ownable {
     function getTokenPrice(address _token)
         public
         view
-        onlyAsset(token)
+        onlyAsset(_token)
         returns (uint256)
     {
         Asset memory asset = assets[_token];

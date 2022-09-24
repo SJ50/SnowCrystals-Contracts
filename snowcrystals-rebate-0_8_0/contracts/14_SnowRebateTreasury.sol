@@ -86,7 +86,8 @@ contract SnowRebateTreasury is Ownable {
     constructor(
         address _snow,
         address _snowOracle,
-        address _treasury
+        address _treasury,
+        address _usdc
     ) {
         Snow = IERC20(_snow);
         SnowOracle = IOracle(_snowOracle);
@@ -105,7 +106,7 @@ contract SnowRebateTreasury is Ownable {
 
     // Bond asset for discounted Snow at bond rate
 
-    function bond(address _token, uint256 _amount) external onlyAsset(token) {
+    function bond(address _token, uint256 _amount) external onlyAsset(_token) {
         require(_amount > 0, "RebateTreasury: invalid bond amount");
         uint256 snowAmount = getSnowReturn(_token, _amount);
         require(
@@ -300,7 +301,7 @@ contract SnowRebateTreasury is Ownable {
 
     // Get token price from Oracle
 
-    function getTokenPrice(address token)
+    function getTokenPrice(address _token)
         public
         view
         onlyAsset(_token)
