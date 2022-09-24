@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.7;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "../interfaces/IOracle.sol";
@@ -11,7 +11,7 @@ import "../interfaces/lib/IUniswapV2Pair.sol";
 contract SnowRebateTreasury is Ownable {
     struct Asset {
         bool isAdded;
-        uint256 multiplier;
+        uint256 multiplier; // 1100000 for 1.1 (10% discount if discount set to zero)
         address oracle;
         bool isLP;
         address pair;
@@ -32,7 +32,7 @@ contract SnowRebateTreasury is Ownable {
     mapping(address => Asset) public assets;
     mapping(address => VestingSchedule) public vesting;
 
-    uint256 public discount = 70000;
+    uint256 public discount; // 100000 for 10% discount or 1.1
     bool staticPremiumEnabled = true;
 
     uint256 public bondThreshold = 20 * 1e4;
@@ -166,6 +166,7 @@ contract SnowRebateTreasury is Ownable {
         bool _isLP,
         address _pair
     ) external onlyOwner {
+        require(_multiplier >= 1e6);
         assets[_token].isAdded = _isAdded;
         assets[_token].multiplier = _multiplier;
         assets[_token].oracle = _oracle;
@@ -258,39 +259,47 @@ contract SnowRebateTreasury is Ownable {
         uint256 snowPrice = getSnowPrice();
         uint256 tokenPrice = getTokenPrice(_token);
         uint256 bondPremium = getBondPremium();
-        uint256 decimalsMultiplier = _token == USDC ? 1e12 : 1;
+        uint256 decimalsMultiplier = 10 **
+            (18 - IERC20Metadata(_token).decimals());
         return
-            (amount *
-                decimalsMultiplier *
-                tokenPrice *
-                (bondPremium + DENOMINATOR) *
-                assets[_token].multiplier) /
-            (DENOMINATOR * DENOMINATOR) /
+            (_amount * decimalsMultiplier * tokenPrice * bondPremium) /
             snowPrice;
     }
 
     // Calculate premium for bonds based on bonding curve
 
-    function getBondPremium() public view returns (uint256) {
+    function getBondPremium(address _token)
+        public
+        view
+        onlyAsset(_token)
+        returns (uint256)
+    {
         if (staticPremiumEnabled) {
-            return discount;
+            return
+                ((discount + DENOMINATOR) * assets[_token].multiplier) /
+                (DENOMINATOR * DENOMINATOR);
         }
-
+        uint256 premium;
         uint256 snowPrice = getSnowPrice();
         if (snowPrice < 1e18) return 0;
 
         uint256 snowPremium = (snowPrice * DENOMINATOR) / 1e18 - DENOMINATOR;
         if (snowPremium < bondThreshold) return 0;
         if (snowPremium <= secondaryThreshold) {
-            return ((snowPremium - bondThreshold) * bondFactor) / DENOMINATOR;
+            premium =
+                ((snowPremium - bondThreshold) * bondFactor) /
+                DENOMINATOR;
         } else {
             uint256 primaryPremium = ((secondaryThreshold - bondThreshold) *
                 bondFactor) / DENOMINATOR;
-            return
+            premium =
                 primaryPremium +
                 ((snowPremium - secondaryThreshold) * secondaryFactor) /
                 DENOMINATOR;
         }
+        return
+            ((premium + DENOMINATOR) * assets[_token].multiplier) /
+            (DENOMINATOR * DENOMINATOR);
     }
 
     // Get SNOW price from Oracle
