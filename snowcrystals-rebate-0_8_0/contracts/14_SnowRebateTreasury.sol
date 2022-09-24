@@ -250,7 +250,7 @@ contract SnowRebateTreasury is Ownable {
 
     // Calculate Snow return of bonding amount of token
 
-    function getSnowReturn(address _token, uint256 amount)
+    function getSnowReturn(address _token, uint256 _amount)
         public
         view
         onlyAsset(_token)
@@ -258,7 +258,7 @@ contract SnowRebateTreasury is Ownable {
     {
         uint256 snowPrice = getSnowPrice();
         uint256 tokenPrice = getTokenPrice(_token);
-        uint256 bondPremium = getBondPremium();
+        uint256 bondPremium = getBondPremium(_token);
         uint256 decimalsMultiplier = 10 **
             (18 - IERC20Metadata(_token).decimals());
         return
