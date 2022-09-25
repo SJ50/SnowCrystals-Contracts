@@ -33,7 +33,7 @@ contract GlcrRebateTreasury is Ownable {
     mapping(address => VestingSchedule) public vesting;
 
     uint256 public discount; // 100000 for 10% discount or 1.1
-    bool staticPremiumEnabled = true;
+    bool public staticPremiumEnabled = true;
 
     uint256 public bondThreshold = 20 * 1e4;
     uint256 public bondFactor = 80 * 1e4;
@@ -262,8 +262,10 @@ contract GlcrRebateTreasury is Ownable {
         uint256 decimalsMultiplier = 10 **
             (18 - IERC20Metadata(_token).decimals());
         return
-            (_amount * decimalsMultiplier * tokenPrice * bondPremium) /
-            glcrPrice;
+            (_amount *
+                decimalsMultiplier *
+                tokenPrice *
+                (bondPremium / (DENOMINATOR * DENOMINATOR))) / glcrPrice;
     }
 
     // Calculate premium for bonds based on bonding curve
@@ -275,31 +277,8 @@ contract GlcrRebateTreasury is Ownable {
         returns (uint256)
     {
         if (staticPremiumEnabled) {
-            return
-                ((discount + DENOMINATOR) * assets[_token].multiplier) /
-                (DENOMINATOR * DENOMINATOR);
+            return ((discount + DENOMINATOR) * assets[_token].multiplier);
         }
-        uint256 premium;
-        uint256 glcrPrice = getGlcrPrice();
-        if (glcrPrice < 1e18) return 0;
-
-        uint256 glcrPremium = (glcrPrice * DENOMINATOR) / 1e18 - DENOMINATOR;
-        if (glcrPremium < bondThreshold) return 0;
-        if (glcrPremium <= secondaryThreshold) {
-            premium =
-                ((glcrPremium - bondThreshold) * bondFactor) /
-                DENOMINATOR;
-        } else {
-            uint256 primaryPremium = ((secondaryThreshold - bondThreshold) *
-                bondFactor) / DENOMINATOR;
-            premium =
-                primaryPremium +
-                ((glcrPremium - secondaryThreshold) * secondaryFactor) /
-                DENOMINATOR;
-        }
-        return
-            ((premium + DENOMINATOR) * assets[_token].multiplier) /
-            (DENOMINATOR * DENOMINATOR);
     }
 
     // Get GLCR price from Oracle
