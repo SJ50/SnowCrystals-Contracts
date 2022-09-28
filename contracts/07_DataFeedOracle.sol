@@ -21,25 +21,20 @@ contract DataFeedOracle {
         ref = _ref;
     }
 
-    function consult(address _base, uint256 _amountIn)
+    function consult(address _token, uint256 _amountIn)
         external
         view
-        returns (uint256)
+        returns (uint144 amountOut)
     {
-        string memory base = IERC20Metadata(_base).symbol();
-        if (
-            keccak256(abi.encodePacked(base)) ==
-            keccak256(abi.encodePacked("WCRO"))
-        ) {
-            base = "CRO";
-        }
+        return 1e18;
+    }
 
-        IStdReference.ReferenceData memory data = ref.getReferenceData(
-            base,
-            "USD"
-        );
-        uint256 amountIn = _amountIn.div(1e18);
-        return data.rate.mul(amountIn);
+    function twap(address _token, uint256 _amountIn)
+        external
+        view
+        returns (uint144 _amountOut)
+    {
+        return 1e18;
     }
 
     function getPrice(string memory _base, string memory _quote)
