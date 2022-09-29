@@ -262,9 +262,9 @@ contract GlcrRebateTreasury is Ownable {
         uint256 decimalsMultiplier = 10 **
             (18 - IERC20Metadata(_token).decimals());
         return
-            ((_amount * decimalsMultiplier) *
-                tokenPrice *
-                (bondPremium / (DENOMINATOR * DENOMINATOR))) / glcrPrice;
+            (_amount * decimalsMultiplier * tokenPrice * bondPremium) /
+            (DENOMINATOR * DENOMINATOR) /
+            glcrPrice;
     }
 
     // Calculate premium for bonds based on bonding curve
