@@ -262,8 +262,7 @@ contract GlcrRebateTreasury is Ownable {
         uint256 decimalsMultiplier = 10 **
             (18 - IERC20Metadata(_token).decimals());
         return
-            (_amount *
-                decimalsMultiplier *
+            ((_amount * decimalsMultiplier) *
                 tokenPrice *
                 (bondPremium / (DENOMINATOR * DENOMINATOR))) / glcrPrice;
     }
