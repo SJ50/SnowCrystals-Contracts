@@ -104,8 +104,10 @@ genesis_pool = os.environ.get("GENESIS_POOL")
 tax_office = os.environ.get("TAX_OFFICE")
 wrapped_router = os.environ.get("WRAPPED_ROUTER")
 # liquidity_fund = os.environ.get("LIQUIDITY_FUND")
-snow_rebate_treasury = os.environ.get("SNOW_REBATE_TREASURY")
-glcr_rebate_treasury = os.environ.get("GLCR_REBATE_TREASURY")
+snow_dao_rebate_treasury = os.environ.get("SNOW_DAO_REBATE_TREASURY")
+glcr_dao_rebate_treasury = os.environ.get("GLCR_DAO_REBATE_TREASURY")
+snow_dev_rebate_treasury = os.environ.get("SNOW_DEV_REBATE_TREASURY")
+glcr_dev_rebate_treasury = os.environ.get("GLCR_DEV_REBATE_TREASURY")
 zap = os.environ.get("ZAP")
 
 
@@ -153,7 +155,7 @@ def set_taxoffice_maintoken():
     print("maintoken exclude Boardroom from tax to claim maintoken free...")
     set_boardroom_whitelist_type_tx = tax_office_contract.setMainTokenWhitelistType(
         boardroom,
-        3,
+        3,  #    0 = NONE, 1 = SENDER, 2 = RECIPIENT, 3 = BOTH
         {"from": deployer_account},
     )
     set_boardroom_whitelist_type_tx.wait(1)
@@ -161,7 +163,7 @@ def set_taxoffice_maintoken():
     print("Maintoken exclude maintokenLP from tax to make buying token tax free...")
     set_lp_whitelist_type_tx = tax_office_contract.setMainTokenWhitelistType(
         main_token_lp,
-        1,
+        1,  #    0 = NONE, 1 = SENDER, 2 = RECIPIENT, 3 = BOTH
         {"from": deployer_account},
     )
     set_lp_whitelist_type_tx.wait(1)
@@ -171,7 +173,7 @@ def set_taxoffice_maintoken():
     )
     set_zap_whitelist_type_tx = tax_office_contract.setMainTokenWhitelistType(
         zap,
-        1,
+        1,  #    0 = NONE, 1 = SENDER, 2 = RECIPIENT, 3 = BOTH
         {"from": deployer_account},
     )
     set_zap_whitelist_type_tx.wait(1)
@@ -191,7 +193,7 @@ def set_taxoffice_maintoken():
     )
     set_tax_office_whitelist_type_tx = tax_office_contract.setMainTokenWhitelistType(
         tax_office,
-        3,
+        3,  #    0 = NONE, 1 = SENDER, 2 = RECIPIENT, 3 = BOTH
         {"from": deployer_account},
     )
     set_tax_office_whitelist_type_tx.wait(1)
@@ -202,11 +204,10 @@ def set_taxoffice_maintoken():
     set_wrapped_router_whitelist_type_tx = (
         tax_office_contract.setMainTokenWhitelistType(
             wrapped_router,
-            3,
+            3,  #    0 = NONE, 1 = SENDER, 2 = RECIPIENT, 3 = BOTH
             {"from": deployer_account},
         )
     )
-
     set_wrapped_router_whitelist_type_tx.wait(1)
 
     # print(
@@ -236,8 +237,18 @@ def set_taxoffice_maintoken():
     print("Maintoken exclude rebate_treasury claiming maintoken free...")
     set_rebate_treasury_whitelist_type_tx = (
         tax_office_contract.setMainTokenWhitelistType(
-            snow_rebate_treasury,
-            3,
+            snow_dao_rebate_treasury,
+            3,  #    0 = NONE, 1 = SENDER, 2 = RECIPIENT, 3 = BOTH
+            {"from": deployer_account},
+        )
+    )
+    set_rebate_treasury_whitelist_type_tx.wait(1)
+
+    print("Maintoken exclude dev_rebate_treasury claiming maintoken free...")
+    set_rebate_treasury_whitelist_type_tx = (
+        tax_office_contract.setMainTokenWhitelistType(
+            snow_dev_rebate_treasury,
+            3,  #    0 = NONE, 1 = SENDER, 2 = RECIPIENT, 3 = BOTH
             {"from": deployer_account},
         )
     )
@@ -256,7 +267,7 @@ def set_taxoffice_sharetoken():
     print("sharetoken exclude Boardroom to deposit and withdraw sharetoken free...")
     set_boardroom_whitelist_type_tx = tax_office_contract.setShareTokenWhitelistType(
         boardroom,
-        3,
+        3,  #    0 = NONE, 1 = SENDER, 2 = RECIPIENT, 3 = BOTH
         {"from": deployer_account},
     )
     set_boardroom_whitelist_type_tx.wait(1)
@@ -264,7 +275,7 @@ def set_taxoffice_sharetoken():
     print("sharetoken exclude sharetokenLP from tax to make buying token tax free...")
     set_lp_whitelist_type_tx = tax_office_contract.setShareTokenWhitelistType(
         share_token_lp,
-        1,
+        1,  #    0 = NONE, 1 = SENDER, 2 = RECIPIENT, 3 = BOTH
         {"from": deployer_account},
     )
     set_lp_whitelist_type_tx.wait(1)
@@ -274,7 +285,7 @@ def set_taxoffice_sharetoken():
     )
     set_zap_whitelist_type_tx = tax_office_contract.setShareTokenWhitelistType(
         zap,
-        1,
+        1,  #    0 = NONE, 1 = SENDER, 2 = RECIPIENT, 3 = BOTH
         {"from": deployer_account},
     )
     set_zap_whitelist_type_tx.wait(1)
@@ -294,7 +305,7 @@ def set_taxoffice_sharetoken():
     )
     set_tax_office_whitelist_type_tx = tax_office_contract.setShareTokenWhitelistType(
         tax_office,
-        3,
+        3,  #    0 = NONE, 1 = SENDER, 2 = RECIPIENT, 3 = BOTH
         {"from": deployer_account},
     )
     set_tax_office_whitelist_type_tx.wait(1)
@@ -305,7 +316,7 @@ def set_taxoffice_sharetoken():
     set_wrapped_router_whitelist_type_tx = (
         tax_office_contract.setShareTokenWhitelistType(
             wrapped_router,
-            3,
+            3,  #    0 = NONE, 1 = SENDER, 2 = RECIPIENT, 3 = BOTH
             {"from": deployer_account},
         )
     )
@@ -314,8 +325,18 @@ def set_taxoffice_sharetoken():
     print("sharetoken exclude rebate_treasury claiming sharetoken free...")
     set_rebate_treasury_whitelist_type_tx = (
         tax_office_contract.setShareTokenWhitelistType(
-            glcr_rebate_treasury,
-            3,
+            glcr_dao_rebate_treasury,
+            3,  #    0 = NONE, 1 = SENDER, 2 = RECIPIENT, 3 = BOTH
+            {"from": deployer_account},
+        )
+    )
+    set_rebate_treasury_whitelist_type_tx.wait(1)
+
+    print("sharetoken exclude dev_rebate_treasury claiming sharetoken free...")
+    set_rebate_treasury_whitelist_type_tx = (
+        tax_office_contract.setShareTokenWhitelistType(
+            glcr_dev_rebate_treasury,
+            3,  #    0 = NONE, 1 = SENDER, 2 = RECIPIENT, 3 = BOTH
             {"from": deployer_account},
         )
     )
@@ -386,7 +407,7 @@ def setup_boardroom():
     stake_tx.wait(1)
 
 
-def setup_oracle():
+def setup_treasury_oracle():
     oracle_contract = Contract(oracle)
     print("Updating Oracle...")
     update_tx = oracle_contract.update({"from": deployer_account})
@@ -442,7 +463,7 @@ def setup_treasury():
         800,
         dev_fund,
         800,
-        snow_rebate_treasury,
+        snow_dao_rebate_treasury,
         2200,
         {"from": deployer_account},
     )
@@ -558,6 +579,74 @@ def setup_zap():
     zap_setIsFeeOnTransfer_tx.wait(1)
 
 
+def setup_dao_snow_rebate():
+    snow_rebate_abi = get_abi("snow_rebate_abi.json")
+    snow_rebate_contract = Contract.from_abi(
+        "snow rebate", snow_dao_rebate_treasury, snow_rebate_abi
+    )
+    snow_rebate_setAsset_tx = snow_rebate_contract.setAsset(
+        peg_token,  # USDC
+        True,
+        1100000,  # multiplyer
+        datafeed_oracle,  # USDC oracle
+        False,
+        "0x0000000000000000000000000000000000000000",
+        {"from": deployer_account},
+    )
+    snow_rebate_setAsset_tx.wait(1)
+
+
+def setup_dao_glcr_rebate():
+    glcr_rebate_abi = get_abi("snow_rebate_abi.json")
+    glcr_rebate_contract = Contract.from_abi(
+        "snow rebate", glcr_dao_rebate_treasury, glcr_rebate_abi
+    )
+    glcr_rebate_setAsset_tx = glcr_rebate_contract.setAsset(
+        peg_token,  # USDC
+        True,
+        1100000,  # multiplyer
+        datafeed_oracle,  # USDC oracle
+        False,
+        "0x0000000000000000000000000000000000000000",
+        {"from": deployer_account},
+    )
+    glcr_rebate_setAsset_tx.wait(1)
+
+
+def setup_dev_snow_rebate():
+    snow_rebate_abi = get_abi("snow_rebate_abi.json")
+    snow_rebate_contract = Contract.from_abi(
+        "snow rebate", snow_dev_rebate_treasury, snow_rebate_abi
+    )
+    snow_rebate_setAsset_tx = snow_rebate_contract.setAsset(
+        peg_token,  # USDC
+        True,
+        1100000,  # multiplyer
+        datafeed_oracle,  # USDC oracle
+        False,
+        "0x0000000000000000000000000000000000000000",
+        {"from": deployer_account},
+    )
+    snow_rebate_setAsset_tx.wait(1)
+
+
+def setup_dev_glcr_rebate():
+    glcr_rebate_abi = get_abi("snow_rebate_abi.json")
+    glcr_rebate_contract = Contract.from_abi(
+        "snow rebate", glcr_dev_rebate_treasury, glcr_rebate_abi
+    )
+    glcr_rebate_setAsset_tx = glcr_rebate_contract.setAsset(
+        peg_token,  # USDC
+        True,
+        1100000,  # multiplyer
+        datafeed_oracle,  # USDC oracle
+        False,
+        "0x0000000000000000000000000000000000000000",
+        {"from": deployer_account},
+    )
+    glcr_rebate_setAsset_tx.wait(1)
+
+
 def get_all_info():
     print(f"The active network is {network.show_active()}")
     print(f"PEG token is {peg_token}")
@@ -582,8 +671,10 @@ def get_all_info():
     print(f"ZAP contract is {zap}")
     print(f"TAX OFFICE contract is {tax_office}")
     print(f"WRAPPED ROUTER contract is {wrapped_router}")
-    print(f"SNOW REBATE TREASURY contract is {snow_rebate_treasury}")
-    print(f"GLCR REBATE TREASURY contract is {glcr_rebate_treasury}")
+    print(f"SNOW DAO REBATE TREASURY contract is {snow_dao_rebate_treasury}")
+    print(f"GLCR DAO REBATE TREASURY contract is {glcr_dao_rebate_treasury}")
+    print(f"SNOW DEV REBATE TREASURY contract is {snow_dev_rebate_treasury}")
+    print(f"GLCR DEV REBATE TREASURY contract is {glcr_dev_rebate_treasury}")
     print(f"contract deployer account {deployer_account}")
     print(f"dao account {dao_fund}")
     print(f"devloper account {dev_fund}")
@@ -597,7 +688,7 @@ def main():
     setup_share_token()
     set_taxoffice_sharetoken()
     setup_boardroom()
-    setup_oracle()
+    setup_treasury_oracle()
     setup_MainToken_oracle()
     setup_ShareToken_oracle()
     setup_treasury()
@@ -607,4 +698,8 @@ def main():
     # setup_node_bonus_reward_pool()
     # setup_sbond_bonus_reward_pool()
     setup_zap()
+    setup_dao_snow_rebate()
+    setup_dao_glcr_rebate()
+    setup_dev_snow_rebate()
+    setup_dev_glcr_rebate()
     get_all_info()

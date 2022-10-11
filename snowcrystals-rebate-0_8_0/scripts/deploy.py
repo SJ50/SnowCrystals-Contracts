@@ -16,6 +16,8 @@ from brownie import (
     Zap,
     GlcrRebateTreasury,
     SnowRebateTreasury,
+    DevSnowRebateTreasury,
+    DevGlcrRebateTreasury,
 )
 
 # from web3 import Web3
@@ -33,14 +35,6 @@ factory_address = config["networks"][network.show_active()]["factory_address"]
 peg_token = config["networks"][network.show_active()]["usdc_token"]  # USDC
 publish_source = config["networks"][network.show_active()]["varify"]
 
-
-# use datetime to deploy at specific time.
-# start_time = datetime.datetime(2022, 8, 1, 0, 0).timestamp()
-start_time = (
-    time.time() + 60
-)  # deploy now // sharetoken, oracle - 1day, share_token_reward(chef), node + 7 days, genesis_pool - 12 hr, treasury
-boardroom_start_time = time.time() + 60
-oracle_period = 21600  # 6 hours
 
 if network.show_active() in LOCAL_BLOCKCHAIN_ENVIRONMENTS:
     deployer_account = get_account()
@@ -75,6 +69,8 @@ def deploy_zap():
 maintoken = os.environ.get("MAIN_TOKEN")
 oracle = os.environ.get("ORACLE")
 treasury = os.environ.get("TREASURY")
+sharetoken = os.environ.get("SHARE_TOKEN")
+sharetoken_oracle = os.environ.get("SHARETOKEN_ORACLE")
 
 
 def deploy_snow_rebate_treasury():
@@ -84,14 +80,15 @@ def deploy_snow_rebate_treasury():
             maintoken,
             oracle,
             treasury,
+            peg_token,
             {"from": deployer_account},
             publish_source=publish_source,
         )
         append_new_line(
-            ".env", "export SNOW_REBATE_TREASURY=" + snow_rebate_treasury.address
+            ".env", "export SNOW_DAO_REBATE_TREASURY=" + snow_rebate_treasury.address
         )
     snow_rebate_treasury = SnowRebateTreasury[-1]
-    os.environ["SNOW_REBATE_TREASURY"] = snow_rebate_treasury.address
+    os.environ["SNOW_DAO_REBATE_TREASURY"] = snow_rebate_treasury.address
     return snow_rebate_treasury
 
 
@@ -99,18 +96,59 @@ def deploy_glcr_rebate_treasury():
     if len(GlcrRebateTreasury) <= 0:
         print("deploying Glcr RebateTreasury...")
         glcr_rebate_treasury = GlcrRebateTreasury.deploy(
-            maintoken,
-            oracle,
+            sharetoken,
+            sharetoken_oracle,
             treasury,
+            peg_token,
             {"from": deployer_account},
             publish_source=publish_source,
         )
         append_new_line(
-            ".env", "export GLCR_REBATE_TREASURY=" + glcr_rebate_treasury.address
+            ".env", "export GLCR_DAO_REBATE_TREASURY=" + glcr_rebate_treasury.address
         )
     glcr_rebate_treasury = GlcrRebateTreasury[-1]
-    os.environ["GLCR_REBATE_TREASURY"] = glcr_rebate_treasury.address
+    os.environ["GLCR_DAO_REBATE_TREASURY"] = glcr_rebate_treasury.address
     return glcr_rebate_treasury
+
+
+def deploy_dev_snow_rebate_treasury():
+    if len(DevSnowRebateTreasury) <= 0:
+        print("deploying Devloper Snow RebateTreasury...")
+        snow_dev_rebate_treasury = DevSnowRebateTreasury.deploy(
+            maintoken,
+            oracle,
+            treasury,
+            peg_token,
+            {"from": deployer_account},
+            publish_source=publish_source,
+        )
+        append_new_line(
+            ".env",
+            "export SNOW_DEV_REBATE_TREASURY=" + snow_dev_rebate_treasury.address,
+        )
+    snow_dev_rebate_treasury = DevSnowRebateTreasury[-1]
+    os.environ["SNOW_DEV_REBATE_TREASURY"] = snow_dev_rebate_treasury.address
+    return snow_dev_rebate_treasury
+
+
+def deploy_dev_glcr_rebate_treasury():
+    if len(DevGlcrRebateTreasury) <= 0:
+        print("deploying Devloper Glcr RebateTreasury...")
+        glcr_dev_rebate_treasury = DevGlcrRebateTreasury.deploy(
+            sharetoken,
+            sharetoken_oracle,
+            treasury,
+            peg_token,
+            {"from": deployer_account},
+            publish_source=publish_source,
+        )
+        append_new_line(
+            ".env",
+            "export GLCR_DEV_REBATE_TREASURY=" + glcr_dev_rebate_treasury.address,
+        )
+    glcr_dev_rebate_treasury = DevGlcrRebateTreasury[-1]
+    os.environ["GLCR_DEV_REBATE_TREASURY"] = glcr_dev_rebate_treasury.address
+    return glcr_dev_rebate_treasury
 
 
 # def setup_zap():
@@ -161,4 +199,6 @@ def main():
     deploy_zap()
     deploy_snow_rebate_treasury()
     deploy_glcr_rebate_treasury()
+    deploy_dev_snow_rebate_treasury()
+    deploy_dev_glcr_rebate_treasury()
     append_new_line(".env", "")

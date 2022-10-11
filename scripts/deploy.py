@@ -275,7 +275,7 @@ def deploy_share_token_lp():
     )
 
 
-def deploy_oracle_contract():
+def deploy_treasury_oracle_contract():
     if len(Oracle) <= 0:
         main_token_lp = os.environ.get("MAIN_TOKEN_LP")
         main_token = os.environ.get("MAIN_TOKEN")
@@ -570,7 +570,7 @@ def main():
     deploy_share_token_lp()
     deploy_boardroom()
     deploy_treasury_contract()
-    deploy_oracle_contract()
+    deploy_treasury_oracle_contract()
     deploy_MainToken_oracle_contract()
     deploy_ShareToken_oracle_contract()
     deploy_DataFeed_oracle_contract()
