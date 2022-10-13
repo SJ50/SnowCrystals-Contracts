@@ -64,7 +64,7 @@ sharetoken_symbol = "GLCR"
 # use datetime to deploy at specific time.
 # start_time = datetime.datetime(2022, 8, 1, 0, 0).timestamp()
 sharetoken_start_time = int(
-    datetime.datetime(2022, 10, 14, 0, 0).timestamp()
+    datetime.datetime(2022, 10, 15, 0, 0).timestamp()
 )  # to find endtime
 sharetoken_reward_start_time = sharetoken_start_time  # time when sharetoken farm starts
 genesis_pool_start_time = sharetoken_start_time  # genesis pool start time, should be <= sharetoken_reward_start_time
@@ -82,7 +82,9 @@ oracle_start_time = int(  # all oracle can start now
     time.time() + 600
 )  # deploy now // sharetoken, oracle - 1day, share_token_reward(chef), node + 7 days, genesis_pool - 12 hr, treasury
 # boardroom_start_time = time.time() + 600
-oracle_period = 21600  # 6 hours
+oracle_period = int(
+    datetime.timedelta(hours=6).total_seconds()
+)  # 21600 seconds # 6 hours
 
 
 if network.show_active() in LOCAL_BLOCKCHAIN_ENVIRONMENTS:

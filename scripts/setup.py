@@ -62,10 +62,12 @@ sharetoken_symbol = "GLCR"
 # use datetime to deploy at specific time.
 
 treasury_start_time = int(
-    datetime.datetime(2022, 10, 14, 0, 0).timestamp()
+    datetime.datetime(2022, 10, 15, 0, 0).timestamp()
     + datetime.timedelta(days=2).total_seconds()  # boardroom start after 2 day
 )
-oracle_period = 21600  # 6 hours
+oracle_period = int(
+    datetime.timedelta(hours=6).total_seconds()
+)  # 21600 seconds # 6 hours
 
 if network.show_active() in LOCAL_BLOCKCHAIN_ENVIRONMENTS:
     deployer_account = get_account()
