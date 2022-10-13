@@ -22,13 +22,13 @@ contract Snow is ERC20Taxable {
     uint256 public totalBurned;
 
     /**
-     * @notice Constructs the TOAST ERC-20 contract.
+     * @notice Constructs the SNOW ERC-20 contract.
      */
     constructor(string memory name_, string memory symbol_)
         public
         ERC20Taxable(name_, symbol_)
     {
-        // Mints 4_000 TOAST to contract creator for initial pool setup.
+        // Mints 1_000 SNOW to contract creator for initial pool setup.
         _mint(msg.sender, 1_000 ether);
     }
 

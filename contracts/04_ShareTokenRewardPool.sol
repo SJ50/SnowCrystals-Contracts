@@ -49,7 +49,7 @@ contract ShareTokenRewardPool {
     uint256 public poolEndTime;
 
     uint256 public glcrPerSecond;
-    uint256 public runningTime = 365 days;
+    uint256 public runningTime = 52 weeks;
     uint256 public constant TOTAL_REWARDS = 21500 ether;
 
     bool enableTaxes = true;

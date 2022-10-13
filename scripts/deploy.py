@@ -63,10 +63,25 @@ sharetoken_name = "snowcrystals.finance SHARE"
 sharetoken_symbol = "GLCR"
 # use datetime to deploy at specific time.
 # start_time = datetime.datetime(2022, 8, 1, 0, 0).timestamp()
-start_time = (
+sharetoken_start_time = int(
+    datetime.datetime(2022, 10, 14, 0, 0).timestamp()
+)  # to find endtime
+sharetoken_reward_start_time = sharetoken_start_time  # time when sharetoken farm starts
+genesis_pool_start_time = sharetoken_start_time  # genesis pool start time, should be <= sharetoken_reward_start_time
+node_start_time = int(  # ? used in setup.py
+    datetime.datetime(2022, 10, 14, 0, 0).timestamp()
+    + datetime.timedelta(days=7).total_seconds()  # boardroom start after 2 day
+)
+# treasury_start_time = (  # ? used in setup.py
+#     datetime.datetime(2022, 9, 14, 0, 0).timestamp()
+#     + datetime.timedelta(days=2).total_seconds()  # boardroom start after 2 day
+# )
+
+
+oracle_start_time = int(  # all oracle can start now
     time.time() + 600
 )  # deploy now // sharetoken, oracle - 1day, share_token_reward(chef), node + 7 days, genesis_pool - 12 hr, treasury
-boardroom_start_time = time.time() + 600
+# boardroom_start_time = time.time() + 600
 oracle_period = 21600  # 6 hours
 
 
@@ -133,10 +148,11 @@ def deploy_bondtoken():
 def deploy_sharetoken():
     if len(sharetoken) <= 0:
         print("deploying sharetoken!")
+        print("farm start time ", sharetoken_start_time)
         share_token = sharetoken.deploy(
             sharetoken_name,
             sharetoken_symbol,
-            start_time,
+            sharetoken_start_time,
             dao_fund,
             dev_fund,
             {"from": deployer_account},
@@ -240,6 +256,12 @@ def deploy_main_token_lp():
     amountBDesired = 1 * 10**18
     amountAMin = 0
     amountBMin = 0
+    factory_abi = get_abi("factory_abi.json")
+    factory = Contract.from_abi("factory", factory_address, factory_abi)
+    get_pair_tx = factory.getPair(tokenA, tokenB, {"from": deployer_account})
+    if get_pair_tx != "0x0000000000000000000000000000000000000000":
+        return create_liquidity_pool(main_token_lp=True)
+
     create_liquidity_pool(
         tokenA=tokenA,
         tokenB=tokenB,
@@ -261,6 +283,12 @@ def deploy_share_token_lp():
     amountBDesired = 1 * 10**18 / 100
     amountAMin = 0
     amountBMin = 0
+    factory_abi = get_abi("factory_abi.json")
+    factory = Contract.from_abi("factory", factory_address, factory_abi)
+    get_pair_tx = factory.getPair(tokenA, tokenB, {"from": deployer_account})
+    if get_pair_tx != "0x0000000000000000000000000000000000000000":
+        return create_liquidity_pool(share_token_lp=True)
+
     create_liquidity_pool(
         tokenA=tokenA,
         tokenB=tokenB,
@@ -279,11 +307,11 @@ def deploy_treasury_oracle_contract():
     if len(Oracle) <= 0:
         main_token_lp = os.environ.get("MAIN_TOKEN_LP")
         main_token = os.environ.get("MAIN_TOKEN")
-        print("deploying oracle!")
+        print("deploying treasury oracle!")
         oracle = Oracle.deploy(
             main_token_lp,
             oracle_period,
-            start_time,
+            oracle_start_time,
             main_token,
             {"from": deployer_account},
             publish_source=publish_source,
@@ -302,7 +330,7 @@ def deploy_MainToken_oracle_contract():
         main_token_oracle = MainTokenOracle.deploy(
             main_token_lp,
             oracle_period,
-            start_time,
+            oracle_start_time,
             main_token,
             {"from": deployer_account},
             publish_source=publish_source,
@@ -317,11 +345,11 @@ def deploy_ShareToken_oracle_contract():
     if len(ShareTokenOracle) <= 0:
         share_token_lp = os.environ.get("SHARE_TOKEN_LP")
         share_token = os.environ.get("SHARE_TOKEN")
-        print("deploying maintoken oracle!")
+        print("deploying sharetoken oracle!")
         share_token_oracle = ShareTokenOracle.deploy(
             share_token_lp,
             oracle_period,
-            start_time,
+            oracle_start_time,
             share_token,
             {"from": deployer_account},
             publish_source=publish_source,
@@ -337,7 +365,7 @@ def deploy_ShareToken_oracle_contract():
 def deploy_DataFeed_oracle_contract():
     if len(DataFeedOracle) <= 0:
         datafeed = config["networks"][network.show_active()]["band_datafeed"]
-        print("deploying maintoken oracle!")
+        print("deploying datafeed oracle!")
         datafeed_oracle = DataFeedOracle.deploy(
             datafeed,
             {"from": deployer_account},
@@ -368,7 +396,7 @@ def deploy_share_token_reward_pool():
         share_token_reward_pool_contract = ShareTokenRewardPool.deploy(
             os.environ.get("SHARE_TOKEN"),
             dao_fund,
-            start_time,
+            sharetoken_reward_start_time,  # sharetoken farming start time
             os.environ.get("BOND_TOKEN"),
             {"from": deployer_account},
             publish_source=publish_source,
@@ -411,7 +439,7 @@ def deploy_main_token_node():
         main_token_lp = os.environ.get("MAIN_TOKEN_LP")
         node_bonus_reward_pool = os.environ.get("NODE_BONUS_REWARD_POOL")
         main_token_node_contract = MainTokenNode.deploy(
-            start_time,
+            node_start_time,
             main_token_lp,
             {"from": deployer_account},
             publish_source=publish_source,
@@ -429,7 +457,7 @@ def deploy_share_token_node():
         print("deploying SHARE node!")
         share_token_lp = os.environ.get("SHARE_TOKEN_LP")
         share_token_node_contract = ShareTokenNode.deploy(
-            start_time,
+            node_start_time,
             share_token_lp,
             {"from": deployer_account},
             publish_source=publish_source,
@@ -446,12 +474,11 @@ def deploy_genesis_pool():
     if len(SnowGenesisRewardPool) <= 0:
         main_token = os.environ.get("MAIN_TOKEN")
         deposit_fee = 120
-        pool_start_time = start_time
         deposit_token = os.environ.get("PEG_TOKEN")
         print("deploying snow genesis pool...")
         usdc_genesis_pool_contract = SnowGenesisRewardPool.deploy(
             main_token,
-            pool_start_time,
+            genesis_pool_start_time,
             dao_fund,
             deposit_fee,
             deposit_token,

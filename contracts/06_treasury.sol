@@ -84,7 +84,7 @@ contract Treasury is ContractGuard, ReentrancyGuard {
     address private devFund;
     uint256 public devFundSharedPercent;
 
-    /* =================== Toast Finance Added variables =================== */
+    /* =================== Added variables =================== */
 
     address public taxOffice;
 

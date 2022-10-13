@@ -15,11 +15,12 @@ contract Glcr is ERC20Taxable {
         - 21500 GLCRs allocated to farming pools
         - Airdop 25 GLCRs allocated to DAO wallet
         - Allocate 6975 GLCRs to DAO wallet for linear vesting
-        - Allocate 3499 GLCRs to Dev wallet for linear vesting
+        - Allocate 3490 GLCRs to Dev wallet for linear vesting
+        - 10 GLCRs for nitial pools deployment and Boardroom initialization 
     */
     uint256 public constant FARMING_POOL_REWARD_ALLOCATION = 21500 ether;
     uint256 public constant COMMUNITY_FUND_POOL_ALLOCATION = 6975 ether;
-    uint256 public constant DEV_FUND_POOL_ALLOCATION = 3499 ether;
+    uint256 public constant DEV_FUND_POOL_ALLOCATION = 3490 ether;
 
     uint256 public constant VESTING_DURATION = 52 weeks;
     uint256 public startTime;
@@ -43,7 +44,7 @@ contract Glcr is ERC20Taxable {
         address _daoFund,
         address _devFund
     ) public ERC20Taxable(name_, symbol_) {
-        _mint(msg.sender, 1 ether); // mint 1 Share for initial pools deployment and Boardroom initialization
+        _mint(msg.sender, 10 ether); // mint 10 Share for initial pools deployment and Boardroom initialization
         _mint(_daoFund, 25 ether); // Airdop 25 GLCR allocated to DAO wallet
 
         startTime = _startTime;

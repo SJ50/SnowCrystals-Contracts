@@ -60,13 +60,12 @@ sharetoken = Glcr
 sharetoken_name = "snowcrystals.finance SHARE"
 sharetoken_symbol = "GLCR"
 # use datetime to deploy at specific time.
-# start_time = datetime.datetime(2022, 8, 1, 0, 0).timestamp()
-start_time = (
-    time.time() + 180
-)  # deploy now // sharetoken, oracle - 1day, share_token_reward(chef), node + 7 days, genesis_pool - 12 hr, treasury
-boardroom_start_time = time.time() + 180
-oracle_period = 21600  # 6 hours
 
+treasury_start_time = int(
+    datetime.datetime(2022, 10, 14, 0, 0).timestamp()
+    + datetime.timedelta(days=2).total_seconds()  # boardroom start after 2 day
+)
+oracle_period = 21600  # 6 hours
 
 if network.show_active() in LOCAL_BLOCKCHAIN_ENVIRONMENTS:
     deployer_account = get_account()
@@ -452,7 +451,7 @@ def setup_treasury():
         share_token,
         oracle,
         boardroom,
-        start_time,
+        treasury_start_time,  # boardroom start 48 hours after farm starts
         tax_office,
         [genesis_pool],
         {"from": deployer_account},
