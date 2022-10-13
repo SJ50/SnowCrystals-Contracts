@@ -71,14 +71,10 @@ if network.show_active() in LOCAL_BLOCKCHAIN_ENVIRONMENTS:
     deployer_account = get_account()
     dao_fund = get_account(index=1)
     dev_fund = get_account(index=2)
-    airdrop_account = get_account(index=3)
-    insurance_fund = get_account(index=3)
 else:
     deployer_account = get_account(id="snowcrystals-deployer")
     dao_fund = get_account(id="snowcrystals-dao")
     dev_fund = get_account(id="snowcrystals-dev")
-    airdrop_account = get_account(id="snowcrystals-airdrop")
-    insurance_fund = get_account(id="snowcrystals-airdrop")
 
 
 ### setup all contract
@@ -677,7 +673,6 @@ def get_all_info():
     print(f"contract deployer account {deployer_account}")
     print(f"dao account {dao_fund}")
     print(f"devloper account {dev_fund}")
-    print(f"airdrop account {airdrop_account}")
 
 
 def main():
