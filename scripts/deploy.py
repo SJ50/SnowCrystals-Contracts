@@ -38,7 +38,7 @@ from brownie import (
 # from web3 import Web3
 # from decimal import *
 
-import datetime
+from datetime import datetime, timezone, timedelta
 import time
 import os
 
@@ -64,27 +64,25 @@ sharetoken_symbol = "GLCR"
 # use datetime to deploy at specific time.
 # start_time = datetime.datetime(2022, 8, 1, 0, 0).timestamp()
 sharetoken_start_time = int(
-    datetime.datetime(2022, 10, 15, 0, 0).timestamp()
+    datetime(2022, 10, 15, 11, 0).timestamp()
 )  # to find endtime
 sharetoken_reward_start_time = sharetoken_start_time  # time when sharetoken farm starts
 genesis_pool_start_time = sharetoken_start_time  # genesis pool start time, should be <= sharetoken_reward_start_time
 node_start_time = int(  # ? used in setup.py
-    datetime.datetime(2022, 10, 14, 0, 0).timestamp()
-    + datetime.timedelta(days=7).total_seconds()  # boardroom start after 2 day
+    sharetoken_start_time + timedelta(days=7).total_seconds()  # node start after 7 days
 )
-# treasury_start_time = (  # ? used in setup.py
-#     datetime.datetime(2022, 9, 14, 0, 0).timestamp()
-#     + datetime.timedelta(days=2).total_seconds()  # boardroom start after 2 day
-# )
-
+treasury_start_time = int(  # ? used in setup.py
+    sharetoken_start_time
+    + timedelta(
+        days=1, hours=18
+    ).total_seconds()  # boardroom start after 1 day 18 hours
+)
 
 oracle_start_time = int(  # all oracle can start now
     time.time() + 600
 )  # deploy now // sharetoken, oracle - 1day, share_token_reward(chef), node + 7 days, genesis_pool - 12 hr, treasury
 # boardroom_start_time = time.time() + 600
-oracle_period = int(
-    datetime.timedelta(hours=6).total_seconds()
-)  # 21600 seconds # 6 hours
+oracle_period = int(timedelta(hours=6).total_seconds())  # 21600 seconds # 6 hours
 
 
 if network.show_active() in LOCAL_BLOCKCHAIN_ENVIRONMENTS:
@@ -146,7 +144,6 @@ def deploy_bondtoken():
 def deploy_sharetoken():
     if len(sharetoken) <= 0:
         print("deploying sharetoken!")
-        print("farm start time ", sharetoken_start_time)
         share_token = sharetoken.deploy(
             sharetoken_name,
             sharetoken_symbol,

@@ -9,6 +9,7 @@ from scripts.helpful_scripts import (
     LOCAL_BLOCKCHAIN_ENVIRONMENTS,
     append_new_line,
 )
+from scripts.deploy import treasury_start_time
 from brownie import (
     config,
     network,
@@ -42,32 +43,10 @@ import time
 import os
 
 
-KEPT_BALANCE = 100 * 10**18
-gas_strategy = GasNowStrategy("fast")
-
 router_address = config["networks"][network.show_active()]["router_address"]
 factory_address = config["networks"][network.show_active()]["factory_address"]
 peg_token = config["networks"][network.show_active()]["usdc_token"]  # USDC
 publish_source = config["networks"][network.show_active()]["varify"]
-
-maintoken = Snow
-maintoken_name = "snowcrystals.finance"
-maintoken_symbol = "SNOW"
-bondtoken = SBond
-bondtoken_name = "snowcrystals.finance BOND"
-bondtoken_symbol = "SBOND"
-sharetoken = Glcr
-sharetoken_name = "snowcrystals.finance SHARE"
-sharetoken_symbol = "GLCR"
-# use datetime to deploy at specific time.
-
-treasury_start_time = int(
-    datetime.datetime(2022, 10, 15, 0, 0).timestamp()
-    + datetime.timedelta(days=2).total_seconds()  # boardroom start after 2 day
-)
-oracle_period = int(
-    datetime.timedelta(hours=6).total_seconds()
-)  # 21600 seconds # 6 hours
 
 if network.show_active() in LOCAL_BLOCKCHAIN_ENVIRONMENTS:
     deployer_account = get_account()
@@ -443,6 +422,7 @@ def setup_ShareToken_oracle():
 def setup_treasury():
     treasury_contract = Contract(treasury)
     print("Initializing treasury...")
+
     intialized_tx = treasury_contract.initialize(
         main_token,
         bond_token,
