@@ -52,7 +52,7 @@ contract SnowGenesisRewardPool is Ownable {
 
     uint256 public snowPerSecond;
     uint256 public runningTime = 48 hours;
-    uint256 public constant TOTAL_REWARDS = 10000 ether;
+    uint256 public constant TOTAL_REWARDS = 24_000 ether;
 
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
@@ -79,7 +79,7 @@ contract SnowGenesisRewardPool is Ownable {
         depositToken = IERC20(_depositToken);
         depositFee = _depositFee;
         operator = msg.sender;
-        add(1, depositToken, false, 0);
+        add(12_000, depositToken, false, 0);
     }
 
     modifier onlyOperator() {

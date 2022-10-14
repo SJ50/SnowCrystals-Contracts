@@ -476,27 +476,27 @@ def setup_genesis_pool():
     wUSDT = config["networks"][network.show_active()]["usdt_token"]
     print("adding wBTC to genesis pool...")
     set_wBTC_genesis_pool_tx = genesis_pool_contract.add(
-        1, wBTC, False, 0, {"from": deployer_account}
+        2400, wBTC, False, 0, {"from": deployer_account}
     )
     set_wBTC_genesis_pool_tx.wait(1)
     print("adding wETH to genesis pool...")
     set_wETH_genesis_pool_tx = genesis_pool_contract.add(
-        1, wETH, False, 0, {"from": deployer_account}
+        2400, wETH, False, 0, {"from": deployer_account}
     )
     set_wETH_genesis_pool_tx.wait(1)
     print("adding wCRO to genesis pool...")
     set_wCRO_genesis_pool_tx = genesis_pool_contract.add(
-        1, wCRO, False, 0, {"from": deployer_account}
+        2400, wCRO, False, 0, {"from": deployer_account}
     )
     set_wCRO_genesis_pool_tx.wait(1)
     print("adding wDAI to genesis pool...")
     set_wDAI_genesis_pool_tx = genesis_pool_contract.add(
-        1, wDAI, False, 0, {"from": deployer_account}
+        2400, wDAI, False, 0, {"from": deployer_account}
     )
     set_wDAI_genesis_pool_tx.wait(1)
     print("adding wUSDT to genesis pool...")
     set_wUSDT_genesis_pool_tx = genesis_pool_contract.add(
-        1, wUSDT, False, 0, {"from": deployer_account}
+        2400, wUSDT, False, 0, {"from": deployer_account}
     )
     set_wUSDT_genesis_pool_tx.wait(1)
 
@@ -504,11 +504,11 @@ def setup_genesis_pool():
 def setup_share_reward_pool():
     share_reward_pool_contract = Contract(share_reward_pool)
     share_reward_add_maintoken_lp_tx = share_reward_pool_contract.add(
-        60, main_token_lp, 0, 0, {"from": deployer_account}
+        12900, main_token_lp, 0, 0, {"from": deployer_account}
     )
     share_reward_add_maintoken_lp_tx.wait(1)
     share_reward_add_sharetoken_lp_tx = share_reward_pool_contract.add(
-        40, share_token_lp, 0, 0, {"from": deployer_account}
+        8600, share_token_lp, 0, 0, {"from": deployer_account}
     )
     share_reward_add_sharetoken_lp_tx.wait(1)
     share_reward_add_bond_tx = share_reward_pool_contract.add(
