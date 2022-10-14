@@ -48,8 +48,8 @@ networks:
     band_datafeed: "0xDA7a001b254CD22e46d3eAB04d937489c93174C3"
     varify: False
   cronos-test:
-    wcro_token: "0x6a3173618859C7cd40fAF6921b5E9eB6A76f1fD4"
-    mockcro_token: "0x9c3C2124B5bcE1688D5F4C707e910F5E2fA6B056"
+    # wcro_token: "0x6a3173618859C7cd40fAF6921b5E9eB6A76f1fD4"
+    wcro_token: "0x9c3C2124B5bcE1688D5F4C707e910F5E2fA6B056"
     router_address: "0xc4e4DdB7a71fCF9Bb7356461Ca75124aA9910653"
     factory_address: "0xBa5FBa5A47f7711C3bF4ca035224c95B3cE2E9C9"
     usdc_token: "0x39D8fa99c9964D456b9fbD5e059e63442F314121"
