@@ -49,13 +49,14 @@ networks:
     varify: False
   cronos-test:
     wcro_token: "0x6a3173618859C7cd40fAF6921b5E9eB6A76f1fD4"
+    mockcro_token: "0x9c3C2124B5bcE1688D5F4C707e910F5E2fA6B056"
     router_address: "0xc4e4DdB7a71fCF9Bb7356461Ca75124aA9910653"
     factory_address: "0xBa5FBa5A47f7711C3bF4ca035224c95B3cE2E9C9"
     usdc_token: "0x39D8fa99c9964D456b9fbD5e059e63442F314121"
-    wbtc_token: "0xB5294e29A6e4CbFbb269a6240313b593190ef544"
-    weth_token: "0x1e8B3db284ef89E19Bc8edb7A0c5246be288a824"
-    dai_token: "0x4b23dfd7e925b543E4354A5D4eA8AD47699e6f12"
-    usdt_token: "0xf1852356be8aD76dAAD31acEB55018Dd87961109"
+    wbtc_token: "0x111b84073280db412dE86b2252045e83604BA383"
+    weth_token: "0x4fB822330853F3442e50714bEB49576740DCa6e0"
+    dai_token: "0xe269eFacB96992DDaCda8C17ACc1411Cc22D484A"
+    usdt_token: "0x3BE41FcDDC7914fbEf3635001b58e5571F7ddbb1"
     band_datafeed: "0xD0b2234eB9431e850a814bCdcBCB18C1093F986B"
     varify: False
   cronos:
