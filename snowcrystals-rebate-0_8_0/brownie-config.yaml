@@ -59,6 +59,8 @@ networks:
     usdt_token: "0x3BE41FcDDC7914fbEf3635001b58e5571F7ddbb1"
     band_datafeed: "0xD0b2234eB9431e850a814bCdcBCB18C1093F986B"
     varify: False
+    snowcrystals-dao: "0xeDc5E564811b96Ec8ca2336895C66b3B88F9ef66"
+    snowcrystals-dev: "0x8680492A2587F3Eb03ca0468F9695A6D21742CfC"
   cronos:
     wcro_token: "0x5C7F8A570d578ED84E63fdFA7b1eE72dEae1AE23"
     router_address: "0x145677FC4d9b8F19B5D56d1820c48e0443049a30"

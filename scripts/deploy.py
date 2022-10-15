@@ -91,8 +91,8 @@ if network.show_active() in LOCAL_BLOCKCHAIN_ENVIRONMENTS:
     dev_fund = get_account(index=2)
 else:
     deployer_account = get_account(id="snowcrystals-deployer")
-    dao_fund = get_account(id="snowcrystals-dao")
-    dev_fund = get_account(id="snowcrystals-dev")
+    dao_fund = config["networks"][network.show_active()]["snowcrystals-dao"]
+    dev_fund = config["networks"][network.show_active()]["snowcrystals-dev"]
 
 
 def get_peg_token():
