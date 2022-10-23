@@ -440,7 +440,11 @@ contract TaxOfficeV3 is TaxOfficeV2 {
             msg.sender == address(mainToken) || msg.sender == operator(),
             "Error: Withdraw permissions insufficient."
         );
-        swapTokensForOther(_amount, address(mainToken), address(pegToken));
+        uint256 burnAmount_ = _amount.mul(80).div(100);
+        mainToken.burn(burnAmount_);
+
+        uint256 taxAmount_ = _amount.sub(burnAmount_);
+        swapTokensForOther(taxAmount_, address(mainToken), address(pegToken));
         updateMainTokenPrice();
     }
 }
