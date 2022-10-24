@@ -114,13 +114,7 @@ def get_peg_token():
 def deploy_maintoken():
     if len(maintoken) <= 0:
         print("deploying maintoken!")
-        print(
-            "farm start time ",
-            sharetoken_start_time,
-            oracle_start_time,
-            treasury_start_time,
-            node_start_time,
-        )
+
         main_token = maintoken.deploy(
             maintoken_name,
             maintoken_symbol,
