@@ -437,11 +437,9 @@ def setup_treasury():
     intialized_tx.wait(1)
     set_extra_fund_tx = treasury_contract.setExtraFunds(
         dao_fund,
-        800,
+        3000,
         dev_fund,
         800,
-        snow_dao_rebate_treasury,
-        2200,
         {"from": deployer_account},
     )
     set_extra_fund_tx.wait(1)

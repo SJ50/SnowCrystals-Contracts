@@ -88,9 +88,6 @@ contract Treasury is ContractGuard, ReentrancyGuard {
 
     address public taxOffice;
 
-    address public rebateTreasury;
-    uint256 public rebateTreasurySharedPercent;
-
     uint256 public minExpansion;
     uint256 public fixedExpansion;
     uint256 public expansionFactor;
@@ -113,7 +110,7 @@ contract Treasury is ContractGuard, ReentrancyGuard {
     event BoardroomFunded(uint256 timestamp, uint256 seigniorage);
     event DaoFundFunded(uint256 timestamp, uint256 seigniorage);
     event DevFundFunded(uint256 timestamp, uint256 seigniorage);
-    event RebateTreasuryFunded(uint256 timestamp, uint256 seigniorage);
+
 
     /* =================== Modifier =================== */
 
@@ -490,21 +487,19 @@ contract Treasury is ContractGuard, ReentrancyGuard {
         uint256 _daoFundSharedPercent,
         address _devFund,
         uint256 _devFundSharedPercent,
-        address _rebateTreasury,
-        uint256 _rebateTreasurySharedPercent
+
+ 
     ) external onlyOperator {
         require(_daoFund != address(0), "zero");
         require(_daoFundSharedPercent <= 3000, "out of range"); // <= 30%
         require(_devFund != address(0), "zero");
         require(_devFundSharedPercent <= 1000, "out of range"); // <= 10%
-        require(_rebateTreasury != address(0), "zero");
-        require(_rebateTreasurySharedPercent <= 3_000, "out of range"); // <= 30%
+       
         daoFund = _daoFund;
         daoFundSharedPercent = _daoFundSharedPercent;
         devFund = _devFund;
         devFundSharedPercent = _devFundSharedPercent;
-        rebateTreasury = _rebateTreasury;
-        rebateTreasurySharedPercent = _rebateTreasurySharedPercent;
+ 
     }
 
     function setMaxDiscountRate(uint256 _maxDiscountRate)
