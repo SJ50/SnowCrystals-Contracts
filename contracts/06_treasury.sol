@@ -111,7 +111,6 @@ contract Treasury is ContractGuard, ReentrancyGuard {
     event DaoFundFunded(uint256 timestamp, uint256 seigniorage);
     event DevFundFunded(uint256 timestamp, uint256 seigniorage);
 
-
     /* =================== Modifier =================== */
 
     modifier onlyOperator() {
@@ -486,20 +485,17 @@ contract Treasury is ContractGuard, ReentrancyGuard {
         address _daoFund,
         uint256 _daoFundSharedPercent,
         address _devFund,
-        uint256 _devFundSharedPercent,
-
- 
+        uint256 _devFundSharedPercent
     ) external onlyOperator {
         require(_daoFund != address(0), "zero");
         require(_daoFundSharedPercent <= 3000, "out of range"); // <= 30%
         require(_devFund != address(0), "zero");
         require(_devFundSharedPercent <= 1000, "out of range"); // <= 10%
-       
+
         daoFund = _daoFund;
         daoFundSharedPercent = _daoFundSharedPercent;
         devFund = _devFund;
         devFundSharedPercent = _devFundSharedPercent;
- 
     }
 
     function setMaxDiscountRate(uint256 _maxDiscountRate)
