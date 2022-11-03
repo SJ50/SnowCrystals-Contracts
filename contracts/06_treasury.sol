@@ -10,10 +10,10 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./access/Operator.sol";
 import "./utils/ContractGuard.sol";
 
-import "../interfaces/IOracle.sol";
-import "../interfaces/IBoardroom.sol";
-import "../interfaces/IERC20Taxable.sol";
-import "../interfaces/ITaxOffice.sol";
+import "./interfaces/IOracle.sol";
+import "./interfaces/IBoardroom.sol";
+import "./interfaces/IERC20Taxable.sol";
+import "./interfaces/ITaxOffice.sol";
 
 /*
     https://snowcrystals.finance
@@ -49,7 +49,7 @@ contract Treasury is ContractGuard, ReentrancyGuard {
     address public glcr;
 
     address public boardroom;
-    address public snowOracle;
+    address public oracle;
 
     // price
     uint256 public snowPriceOne;
@@ -167,7 +167,7 @@ contract Treasury is ContractGuard, ReentrancyGuard {
 
     // oracle
     function getSnowPrice() public view returns (uint256 snowPrice) {
-        try IOracle(snowOracle).consult(snow, 1e18) returns (uint144 price) {
+        try IOracle(oracle).consult(snow, 1e18) returns (uint144 price) {
             return uint256(price);
         } catch {
             revert("Treasury: failed to consult SNOW price from the oracle");
@@ -175,7 +175,7 @@ contract Treasury is ContractGuard, ReentrancyGuard {
     }
 
     function getSnowUpdatedPrice() public view returns (uint256 _snowPrice) {
-        try IOracle(snowOracle).twap(snow, 1e18) returns (uint144 price) {
+        try IOracle(oracle).twap(snow, 1e18) returns (uint144 price) {
             return uint256(price);
         } catch {
             revert("Treasury: failed to consult Snow price from the oracle");
@@ -276,49 +276,49 @@ contract Treasury is ContractGuard, ReentrancyGuard {
         address _snow,
         address _sBond,
         address _glcr,
-        address _snowOracle,
+        address _oracle,
         address _boardroom,
         uint256 _startTime,
-        address _taxOffice,
         address[] memory _excludedFromTotalSupply
     ) public notInitialized {
         snow = _snow;
         sBond = _sBond;
         glcr = _glcr;
-        snowOracle = _snowOracle;
+        oracle = _oracle;
         boardroom = _boardroom;
         startTime = _startTime;
 
-        taxOffice = _taxOffice;
         excludedFromTotalSupply = _excludedFromTotalSupply;
 
-        snowPriceOne = 10**17; // This is to allow a PEG of 10 Snow per USDC
+        snowPriceOne = 10**17; // This is to allow a PEG of 10 Snow per 1 USDC
         snowPriceCeiling = snowPriceOne.mul(101).div(100);
 
         // Dynamic max expansion percent
         supplyTiers = [
             0 ether,
+            50_000 ether,
+            200_000 ether,
             500_000 ether,
             2_000_000 ether,
             4_000_000 ether,
             8_000_000 ether,
             20_000_000 ether
         ];
-        maxExpansionTiers = [300, 250, 200, 150, 125, 100];
+        maxExpansionTiers = [450, 400, 350, 300, 250, 200, 150, 125, 100];
 
         maxSupplyExpansionPercent = 400; // Upto 4.0% supply for expansion
 
-        bondDepletionFloorPercent = 10000; // 100% of Bond supply for depletion floor
-        seigniorageExpansionFloorPercent = 3500; // At least 35% of expansion reserved for boardroom
+        bondDepletionFloorPercent = 10_000; // 100% of Bond supply for depletion floor
+        seigniorageExpansionFloorPercent = 3_500; // At least 35% of expansion reserved for boardroom
         maxSupplyContractionPercent = 300; // Upto 3.0% supply for contraction (to burn Snow and mint BondToken)
-        maxDebtRatioPercent = 4000; // Upto 40% supply of BOND to purchase
+        maxDebtRatioPercent = 4_000; // Upto 40% supply of BOND to purchase
 
         premiumThreshold = 110;
-        premiumPercent = 7000;
+        premiumPercent = 7_000;
 
-        // First 28 epochs with 4% expansion
+        // First 28 epochs with 4.5% expansion
         bootstrapEpochs = 28;
-        bootstrapSupplyExpansionPercent = 400;
+        bootstrapSupplyExpansionPercent = 450;
 
         // set seigniorageSaved to it's balance
         seigniorageSaved = IERC20(snow).balanceOf(address(this));
@@ -339,12 +339,8 @@ contract Treasury is ContractGuard, ReentrancyGuard {
         boardroom = _boardroom;
     }
 
-    function setSnowOracle(address _snowOracle) external onlyOperator {
-        snowOracle = _snowOracle;
-    }
-
-    function setTaxOffice(address _taxOffice) external onlyOperator {
-        taxOffice = _taxOffice;
+    function setOracle(address _oracle) external onlyOperator {
+        oracle = _oracle;
     }
 
     function setSnowPriceCeiling(uint256 _snowPriceCeiling)
@@ -403,33 +399,6 @@ contract Treasury is ContractGuard, ReentrancyGuard {
         );
         require(_value >= 10 && _value <= 1000, "_value: out of range"); // [0.1%, 10%]
         maxExpansionTiers[_index] = _value;
-        return true;
-    }
-
-    function setMinExpansion(uint256 _value)
-        external
-        onlyOperator
-        returns (bool)
-    {
-        minExpansion = _value;
-        return true;
-    }
-
-    function setFixedExpansion(uint256 _value)
-        external
-        onlyOperator
-        returns (bool)
-    {
-        fixedExpansion = _value;
-        return true;
-    }
-
-    function setExpansionFactor(uint256 _value)
-        external
-        onlyOperator
-        returns (bool)
-    {
-        expansionFactor = _value;
         return true;
     }
 
@@ -523,7 +492,7 @@ contract Treasury is ContractGuard, ReentrancyGuard {
     {
         require(
             _premiumThreshold >= snowPriceCeiling,
-            "_premiumThreshold exceeds snowPriceCeiling"
+            "_premiumThreshold does not exceeds snowPriceCeiling"
         );
         require(
             _premiumThreshold <= 150,
@@ -535,6 +504,16 @@ contract Treasury is ContractGuard, ReentrancyGuard {
     function setPremiumPercent(uint256 _premiumPercent) external onlyOperator {
         require(_premiumPercent <= 20000, "_premiumPercent is over 200%");
         premiumPercent = _premiumPercent;
+    }
+
+    function setSeigniorageExpansionFloorPercent(
+        uint256 _seigniorageExpansionFloorPercent
+    ) external onlyOperator {
+        require(
+            _seigniorageExpansionFloorPercent <= 5_000,
+            "_seigniorageExpansionFloorPercent is over 50%"
+        );
+        seigniorageExpansionFloorPercent = _seigniorageExpansionFloorPercent;
     }
 
     function setMintingFactorForPayingDebt(uint256 _mintingFactorForPayingDebt)
@@ -552,7 +531,7 @@ contract Treasury is ContractGuard, ReentrancyGuard {
     /* ========== MUTABLE FUNCTIONS ========== */
 
     function _updateSnowPrice() internal {
-        try IOracle(snowOracle).update() {} catch {}
+        try IOracle(oracle).update() {} catch {}
     }
 
     function getSnowCirculatingSupply() public view returns (uint256) {
@@ -778,11 +757,6 @@ contract Treasury is ContractGuard, ReentrancyGuard {
                 }
             }
         }
-        ITaxOffice(taxOffice).sendToBonus(
-            previousEpochSnowPrice,
-            snowPriceCeiling,
-            nextEpochPoint()
-        );
     }
 
     function governanceRecoverUnsupported(
@@ -834,9 +808,43 @@ contract Treasury is ContractGuard, ReentrancyGuard {
         );
     }
 
+    //*========================= ADDED FUNCTIONS =========================*//
+    function setSnowPriceOne(uint256 _snowPriceOne) external onlyOperator {
+        snowPriceOne = _snowPriceOne; // This is to allow a PEG of 10 SNOW per 1 USDC
+        snowPriceCeiling = snowPriceOne.mul(101).div(100);
+    }
+
+    function setMinExpansion(uint256 _value)
+        external
+        onlyOperator
+        returns (bool)
+    {
+        minExpansion = _value;
+        return true;
+    }
+
+    function setFixedExpansion(uint256 _value)
+        external
+        onlyOperator
+        returns (bool)
+    {
+        fixedExpansion = _value;
+        return true;
+    }
+
+    function setExpansionFactor(uint256 _value)
+        external
+        onlyOperator
+        returns (bool)
+    {
+        expansionFactor = _value;
+        return true;
+    }
+
     /** 
     Snow token contract governance
     **/
+
     function setSnowTaxOffice(address _taxOffice) external onlyOperator {
         IERC20Taxable(snow).setTaxOffice(_taxOffice);
     }
